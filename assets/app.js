@@ -27,7 +27,8 @@
   const session = {
     _m: {},
     get(k) { try { return sessionStorage.getItem(k); } catch (e) { return this._m[k] || null; } },
-    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { this._m[k] = v; } }
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { this._m[k] = v; } },
+    del(k) { try { sessionStorage.removeItem(k); } catch (e) { delete this._m[k]; } }
   };
 
   function toast(msg) {
@@ -47,11 +48,14 @@
     } catch (e) { /* ignore */ }
     try {
       const saved = JSON.parse(store.get("minra.data.v1") || "null");
-      if (saved) ["hubs", "people", "competitors"].forEach((k) => { if (Array.isArray(saved[k])) D[k] = saved[k]; });
+      if (saved) {
+        ["hubs", "people", "competitors"].forEach((k) => { if (Array.isArray(saved[k])) D[k] = saved[k]; });
+        if (Array.isArray(saved.members)) D.tenant.members = saved.members;
+      }
     } catch (e) { /* ignore */ }
   })();
   function persist() {
-    store.set("minra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors }));
+    store.set("minra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members }));
   }
 
   const ACCENTS = {
@@ -425,6 +429,11 @@
       { id: "f-note", label: "Notes", placeholder: "How they work, what they care about" },
       { id: "f-meet", label: "Where to meet", placeholder: "e.g. LogiMAT, Stuttgart" }
     ], "save-person", "Add person"),
+    member: () => formModal("Invite teammate", "They'll get an email with a join link (demo: added directly).", [
+      { id: "f-name", label: "Name" },
+      { id: "f-role", label: "Role", placeholder: "e.g. Inside Sales" },
+      { id: "f-level", label: "Access level", type: "select", options: ["Editor", "Viewer"] }
+    ], "save-member", "Send invite"),
     comp: () => formModal("Add competitor price", "Verified = seen in a real document. Estimated = your model.", [
       { id: "f-vendor", label: "Competitor" },
       { id: "f-product", label: "Product" },
@@ -458,6 +467,8 @@
     } else if (a === "save-person") {
       const c = $("#f-country").value;
       D.people.push({ country: c, flag: FLAGS[c] || "🏳️", name: fval("f-name") || "—", role: fval("f-role"), org: fval("f-org"), note: fval("f-note"), meet: fval("f-meet") || "—" });
+    } else if (a === "save-member") {
+      if (fval("f-name")) D.tenant.members.push({ name: fval("f-name"), role: fval("f-role") || "Teammate", level: $("#f-level").value });
     } else if (a === "save-comp") {
       D.competitors.push({ vendor: fval("f-vendor") || "—", product: fval("f-product") || "—", comparableTo: fval("f-comp") || "—", price: +fval("f-price") || 0, kind: $("#f-kind").value, source: fval("f-source") || "—", checked: today() });
     }
@@ -799,7 +810,9 @@
       } else {
         const objName = D.studio.objectives.find((o) => o.id === s.objective).name;
         lastDeck = {
-          html: window.MinraGen.buildDeck(hub, s.objective, s.tier),
+          html: window.MinraGen.buildDeck(hub, s.objective, s.tier, {
+            accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#c96442"
+          }),
           title: hub.company + " — " + objName + " · " + tier.name
         };
         const EXAMPLES = {
@@ -1086,11 +1099,31 @@
           </tbody></table></div>
       </div>
       <div class="card">
+        <h3>Your account</h3><p class="sub">How you appear across hubs, decks and the activity log.</p>
+        <div class="field" style="margin-top:14px"><label>Display name</label><input id="acc-name" value="${esc(D.tenant.user.name)}" /></div>
+        <div class="field"><label>Email</label><input value="${esc(D.tenant.user.email || "alex@nordcell.se")}" readonly style="color:var(--ink-3)" /></div>
+        <div class="int-row" style="border-bottom:0;padding-bottom:0">
+          <div class="grow"><b>Two-factor authentication</b><span class="src">Sign-ins require a code from your phone</span></div>
+          <div class="toggle ${store.get("minra.2fa") === "on" ? "on" : ""}" data-2fa role="switch" aria-checked="${store.get("minra.2fa") === "on"}" tabindex="0"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn ghost sm" data-act="demo">Change password</button>
+          <button class="btn ghost sm" data-act="sign-out" style="color:var(--critical)">Sign out</button>
+        </div>
+      </div>
+      <div class="card">
         <h3>Team</h3><p class="sub">Everyone sees the same hubs. Roles control publishing.</p>
-        <div class="int-row"><div class="avatar">AK</div><div class="grow"><b>Alex Kjellberg</b><span class="src">Owner · Sales Manager</span></div><span class="badge brand">You</span></div>
-        <div class="int-row"><div class="avatar" style="background:var(--night)">MB</div><div class="grow"><b>Maja Berg</b><span class="src">Editor · Inside Sales</span></div></div>
-        <div class="int-row"><div class="avatar" style="background:var(--night)">TE</div><div class="grow"><b>Tomas Ek</b><span class="src">Viewer · Finance</span></div></div>
-        <button class="btn ghost sm" data-act="demo" style="margin-top:12px">+ Invite teammate</button>
+        ${D.tenant.members.map((m, i) => `
+        <div class="int-row"><div class="avatar" ${m.level === "Owner" ? "" : 'style="background:var(--night)"'}>${esc(m.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</div>
+          <div class="grow"><b>${esc(m.name)}</b><span class="src">${esc(m.role)}</span></div>
+          ${m.level === "Owner"
+            ? `<span class="badge brand">Owner · You</span>`
+            : `<select class="member-level" data-i="${i}" style="border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;background:var(--card)">
+                ${["Editor", "Viewer"].map((l) => `<option ${m.level === l ? "selected" : ""}>${l}</option>`).join("")}
+              </select>
+              <button class="icon-btn" data-act="del-member" data-i="${i}" title="Remove">×</button>`}
+        </div>`).join("")}
+        <button class="btn ghost sm" data-act="add-member" style="margin-top:12px">+ Invite teammate</button>
       </div>
       <div class="card">
         <h3>Integrations</h3><p class="sub">Minra plays well with what you already run.</p>
@@ -1178,6 +1211,16 @@
     const sw = e.target.closest("[data-accent]");
     if (sw) { applyAccent(sw.dataset.accent); render(); toast("Accent updated across the workspace."); return; }
 
+    const tfa = e.target.closest("[data-2fa]");
+    if (tfa) {
+      const on = store.get("minra.2fa") === "on";
+      store.set("minra.2fa", on ? "off" : "on");
+      tfa.classList.toggle("on", !on);
+      tfa.setAttribute("aria-checked", String(!on));
+      toast(on ? "Two-factor disabled." : "Two-factor enabled — codes via your authenticator app.");
+      return;
+    }
+
     const tg = e.target.closest("[data-int]");
     if (tg) {
       const k = "minra.int." + tg.dataset.int;
@@ -1203,7 +1246,7 @@
         return;
       }
       if (a === "reset-demo") {
-        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen", "minra.toured"].forEach((k) => store.del(k));
+        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen", "minra.toured", "minra.username", "minra.2fa"].forEach((k) => store.del(k));
         Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
         ["crm", "erp", "wms", "cal"].forEach((k) => store.del("minra.int." + k));
         toast("Demo data reset.");
@@ -1250,6 +1293,15 @@
       if (a === "add-note") { FORMS.note(); return; }
       if (a === "add-person") { FORMS.person(); return; }
       if (a === "add-comp") { FORMS.comp(); return; }
+      if (a === "add-member") { FORMS.member(); return; }
+      if (a === "del-member") { D.tenant.members.splice(+act.dataset.i, 1); persist(); render(); toast("Teammate removed."); return; }
+      if (a === "sign-out") {
+        session.del("minra.auth");
+        location.hash = "#/dashboard";
+        login.classList.remove("gone");
+        toast("Signed out.");
+        return;
+      }
       if (a === "quote-proposal") {
         const q = quoteState();
         if (!q.total || !q.hub) return;
@@ -1285,6 +1337,14 @@
       store.set("minra.wsname", v);
       $(".logo-sub").textContent = v.toUpperCase();
     }
+    if (e.target.id === "acc-name") {
+      const v = e.target.value.trim() || "Alex Kjellberg";
+      store.set("minra.username", v);
+      D.tenant.user.name = v;
+      D.tenant.user.initials = v.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+      $("#user-name").textContent = v;
+      $("#user-avatar").textContent = D.tenant.user.initials;
+    }
     if (e.target.classList && e.target.classList.contains("qty-in")) {
       const q = quoteState();
       const bar = $("#quote-bar");
@@ -1292,6 +1352,12 @@
       bar.hidden = q.total === 0;
       $("#quote-total").textContent = fmtEUR(q.total);
       $("#quote-items").textContent = q.units;
+    }
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.classList && e.target.classList.contains("member-level")) {
+      const m = D.tenant.members[+e.target.dataset.i];
+      if (m) { m.level = e.target.value; persist(); toast(m.name + " is now " + m.level.toLowerCase() + "."); }
     }
   });
   document.addEventListener("keydown", (e) => {
@@ -1336,6 +1402,11 @@
   if (session.get("minra.auth")) { login.classList.add("gone"); setTimeout(maybeTour, 600); }
 
   /* ---------- boot ---------- */
+  const savedName = store.get("minra.username");
+  if (savedName) {
+    D.tenant.user.name = savedName;
+    D.tenant.user.initials = savedName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  }
   const u = D.tenant.user;
   $("#user-avatar").textContent = u.initials;
   $("#user-name").textContent = u.name;

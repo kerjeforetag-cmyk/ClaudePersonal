@@ -52,6 +52,9 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Forecast** — every open deal lands in its expected close month at value × win likelihood; best case / expected / commit totals and a monthly revenue chart
 - **Deck engagement analytics** — per-section viewing time on shared decks, with the dominant section called out ("the tell") and fed into Next best actions
 - **First-run tour** — a three-door welcome on first sign-in (see your day / open a hub / generate a deck)
+- **Landing page** — `landing.html`: the public face (product, studio showcase, pricing, FAQ) linking into the app and the example decks
+- **Account & admin** — editable display name (live everywhere), 2FA toggle, sign out; team management with invites, role changes and removal, all persisted
+- **Objective-aware decks** — generated presentations now carry a middle act per objective (rollout plan / product trio / phase-one results from real hub history / compliance evidence) and wear the workspace accent color
 
 ## Try it
 

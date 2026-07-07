@@ -10,7 +10,12 @@ window.MINRA = {
   tenant: {
     name: "NordCell Power AB",
     tagline: "Industrial battery systems & charging",
-    user: { name: "Alex Kjellberg", role: "Sales Manager, Northern & Central Europe", initials: "AK" },
+    user: { name: "Alex Kjellberg", email: "alex@nordcell.se", role: "Sales Manager, Northern & Central Europe", initials: "AK" },
+    members: [
+      { name: "Alex Kjellberg", role: "Sales Manager", level: "Owner" },
+      { name: "Maja Berg", role: "Inside Sales", level: "Editor" },
+      { name: "Tomas Ek", role: "Finance", level: "Viewer" }
+    ],
     territories: ["Nordics", "DACH", "Baltics", "Poland"],
     currency: "EUR"
   },

@@ -13,6 +13,35 @@
 
   const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23c96442'/><text x='50' y='68' font-size='56' font-family='Georgia' text-anchor='middle' fill='white'>m</text></svg>" />`;
 
+  // objective-specific middle sections (cards used by both tiers)
+  function middleCards(hub, objKey) {
+    if (objKey === "intro") return [
+      { t: "Li-ion packs", p: "Drop-in 24/48V packs for every major platform — integrated heating for cold environments, 7-year / 10,000-cycle warranty." },
+      { t: "SmartCharge", p: "10–30 kW opportunity charging at the points where work naturally pauses. VDE 0510-48 compliant — no classified battery room." },
+      { t: "FleetView", p: "Telemetry on every pack: state of health, utilization and the sizing data your next decision needs." }
+    ];
+    if (objKey === "renewal") {
+      const won = (hub.proposals || []).filter((p) => p.status === "Accepted");
+      const wonValue = won.reduce((a, p) => a + (p.value || 0), 0);
+      return [
+        { t: "Delivered together", p: won.length ? won.length + " accepted proposal" + (won.length > 1 ? "s" : "") + " worth " + eur(wonValue) + " — on time, on spec." : "Our first phase together — measured, not promised." },
+        { t: "Measured, not claimed", p: "99.6% fleet uptime across all NordCell customers, trailing 12 months — including yours." },
+        { t: "The next step", p: "FleetView data from phase one sizes phase two exactly. You buy what the operation needs, not a safety margin." }
+      ];
+    }
+    if (objKey === "tender") return [
+      { t: "Certified", p: "CE, UN 38.3, VDE 0510-48 and DNV-GL type approval — the full certificate bundle ships with this response." },
+      { t: "Warranted", p: "7 years / 10,000 cycles to 80% capacity, underwriting the cost model in this bid." },
+      { t: "Evidenced", p: "Every compliance answer references a test protocol or certificate in the shared hub — nothing is asserted without a document." }
+    ];
+    // proposal
+    return [
+      { t: "Contract & survey", p: "Site walkthrough with your engineers; final electrical layout and grid check before anything is ordered." },
+      { t: "Install & training", p: "Conversion in planned windows — no production downtime — with your team trained on-site in one day." },
+      { t: "Review & scale", p: "90-day telemetry review; the data sizes the next phase before you commit to it." }
+    ];
+  }
+
   const OBJ = {
     proposal: {
       name: "Commercial proposal",
@@ -69,18 +98,20 @@
     <p class="fine">Valid Q3 2026 · full commercial terms in your Minra hub.</p>`;
   }
 
-  const PRINT_BTN = `<button class="printbtn" onclick="window.print()">Print / PDF</button>
-  <style>.printbtn{position:fixed;right:18px;bottom:18px;z-index:60;background:#c96442;color:#fff;border:0;border-radius:999px;padding:11px 20px;font:600 13px system-ui;cursor:pointer;box-shadow:0 8px 24px -8px rgba(201,100,66,.8)}@media print{.printbtn{display:none}}</style>`;
+  const MIDDLE_TITLE = { proposal: "How the rollout lands", intro: "What we make", renewal: "What phase one proved", tender: "Why this bid holds" };
+  const printBtn = (acc) => `<button class="printbtn" onclick="window.print()">Print / PDF</button>
+  <style>.printbtn{position:fixed;right:18px;bottom:18px;z-index:60;background:${acc};color:#fff;border:0;border-radius:999px;padding:11px 20px;font:600 13px system-ui;cursor:pointer;box-shadow:0 8px 24px -8px rgba(26,25,21,.4)}@media print{.printbtn{display:none}}</style>`;
 
   /* ---------- Essential: clean template document ---------- */
-  function essential(hub, objKey) {
+  function essential(hub, objKey, accent) {
     const o = OBJ[objKey] || OBJ.proposal;
     const st = stats(hub);
+    const mid = middleCards(hub, objKey);
     return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NordCell — ${esc(o.name)} for ${esc(hub.company)} (Essential)</title>${FAVICON}
 <style>
-:root{--paper:#fbfaf7;--ink:#1a1915;--ink2:#52514e;--ink3:#898781;--line:#e3e1d8;--accent:#c96442;
+:root{--paper:#fbfaf7;--ink:#1a1915;--ink2:#52514e;--ink3:#898781;--line:#e3e1d8;--accent:${accent};
 --serif:"Charter","Iowan Old Style",Georgia,serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.6;font-size:15.5px;-webkit-font-smoothing:antialiased}
@@ -120,26 +151,29 @@ footer{margin-top:60px;font-size:12px;color:var(--ink3);text-align:center}footer
 <p style="margin-top:10px">${esc(hub.about)}</p>
 <div class="stats">${st.map((x) => `<div class="stat"><b>${esc(x.v)}</b><span>${esc(x.l)}</span></div>`).join("")}</div>
 ${hubQuote(hub)}
+<h2>${esc(MIDDLE_TITLE[objKey] || MIDDLE_TITLE.proposal)}</h2>
+<div class="stats">${mid.map((c) => `<div class="stat"><b style="font-size:16px">${esc(c.t)}</b><span style="font-size:13px;color:var(--ink2)">${esc(c.p)}</span></div>`).join("")}</div>
 ${priceTable(hub)}
 <h2>How we work</h2>
 <p>Everything in this document lives in your shared Minra hub — prices, technical data and every answer, visible to your whole team. Questions land with all of us, not one inbox.</p>
 <div class="cta-box"><b>Next step:</b> ${esc(o.cta)} — reply in your hub or book directly.<br/>
 <a class="btn" href="mailto:alex@nordcell.se?subject=${encodeURIComponent(o.name + " — " + hub.company)}">${esc(o.cta)}</a></div>
 <footer>Generated with <em>minra</em> Essential · content sourced live from your customer hub</footer>
-</div>${PRINT_BTN}</body></html>`;
+</div>${printBtn(accent)}</body></html>`;
   }
 
   /* ---------- Signature: full-bleed scroll deck ---------- */
-  function signature(hub, objKey) {
+  function signature(hub, objKey, accent) {
     const o = OBJ[objKey] || OBJ.proposal;
     const st = stats(hub);
+    const mid = middleCards(hub, objKey);
     return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NordCell × ${esc(hub.company)} — ${esc(o.name)}</title>${FAVICON}
 <script>document.documentElement.className="js"</script>
 <style>
 :root{--paper:#f7f5ef;--card:#fcfcfb;--ink:#1a1915;--ink2:#52514e;--ink3:#898781;--line:#e3e1d8;
---accent:#c96442;--accent-ink:#7c3a1e;--serif:"Charter","Iowan Old Style",Georgia,serif;
+--accent:${accent};--accent-ink:#7c3a1e;--serif:"Charter","Iowan Old Style",Georgia,serif;
 --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--ease:cubic-bezier(.22,.8,.3,1)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased}
@@ -211,6 +245,16 @@ h2 + p, .sig-p{color:var(--ink2)}
   </div>
 </section>
 
+<section>
+  <div class="inner">
+    <div class="kicker rv">${esc(o.name)}</div>
+    <h2 class="rv">${esc(MIDDLE_TITLE[objKey] || MIDDLE_TITLE.proposal)}.</h2>
+    <div class="grid cols-3">
+      ${mid.map((c, i) => `<div class="card rv d${(i % 2) + 1}"><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></div>`).join("")}
+    </div>
+  </div>
+</section>
+
 ${priceTable(hub) ? `<section><div class="inner"><div class="kicker rv">Commercial</div>${priceTable(hub).replace("<h2>", '<h2 class="rv">')}</div></section>` : ""}
 
 <section class="closing amb">
@@ -223,7 +267,7 @@ ${priceTable(hub) ? `<section><div class="inner"><div class="kicker rv">Commerci
   </div>
 </section>
 
-${PRINT_BTN}
+${printBtn(accent)}
 <script>
 (function(){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.querySelectorAll(".rv").forEach(function(el){el.classList.add("in")})})},{threshold:.3});
 document.querySelectorAll("section").forEach(function(s){io.observe(s)})})();
@@ -232,8 +276,10 @@ document.querySelectorAll("section").forEach(function(s){io.observe(s)})})();
   }
 
   window.MinraGen = {
-    buildDeck: (hub, objKey, tierKey) =>
-      tierKey === "signature" ? signature(hub, objKey) : essential(hub, objKey),
+    buildDeck: (hub, objKey, tierKey, opts) => {
+      const accent = (opts && opts.accent) || "#c96442";
+      return tierKey === "signature" ? signature(hub, objKey, accent) : essential(hub, objKey, accent);
+    },
     objectiveName: (objKey) => (OBJ[objKey] || OBJ.proposal).name
   };
 })();
