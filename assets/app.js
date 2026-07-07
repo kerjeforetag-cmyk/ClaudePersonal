@@ -17,6 +17,19 @@
   const deltaHTML = (v, suffix) =>
     `<span class="delta ${v >= 0 ? "up" : "down"}">${v >= 0 ? "▲" : "▼"} ${Math.abs(v)}${suffix || "%"} <span style="color:var(--ink-3);font-weight:500">vs last quarter</span></span>`;
 
+  // storage can throw in sandboxed embeds — fall back to in-memory
+  const store = {
+    _m: {},
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return this._m[k] || null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { this._m[k] = v; } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { delete this._m[k]; } }
+  };
+  const session = {
+    _m: {},
+    get(k) { try { return sessionStorage.getItem(k); } catch (e) { return this._m[k] || null; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { this._m[k] = v; } }
+  };
+
   function toast(msg) {
     const t = $("#toast");
     t.textContent = msg;
@@ -96,7 +109,7 @@
     people: ["Know who matters before you land", "The people who decide, influence or block your deals — per country, with how they work and where to meet them. Add your own notes after every meeting."]
   };
   function helpNote(key) {
-    if (localStorage.getItem("minra.hn." + key) === "off") return "";
+    if (store.get("minra.hn." + key) === "off") return "";
     const [t, b] = HELP[key];
     return `<div class="help-note" data-hn="${key}">
       <div class="hn-ico">?</div>
@@ -542,7 +555,7 @@
   /* ---------- events ---------- */
   document.addEventListener("click", (e) => {
     const hn = e.target.closest("[data-hn-close]");
-    if (hn) { localStorage.setItem("minra.hn." + hn.dataset.hnClose, "off"); hn.closest(".help-note").remove(); return; }
+    if (hn) { store.set("minra.hn." + hn.dataset.hnClose, "off"); hn.closest(".help-note").remove(); return; }
 
     const pick = e.target.closest("[data-pick]");
     if (pick) { studioState[pick.dataset.pick] = pick.dataset.val; render(); return; }
@@ -569,7 +582,7 @@
   });
 
   $("#help-toggle").addEventListener("click", () => {
-    Object.keys(HELP).forEach((k) => localStorage.removeItem("minra.hn." + k));
+    Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
     render();
     toast("Help notes restored on every page.");
   });
@@ -578,12 +591,12 @@
   /* ---------- login ---------- */
   const login = $("#login");
   function enter() {
-    sessionStorage.setItem("minra.auth", "1");
+    session.set("minra.auth", "1");
     login.classList.add("gone");
   }
   $("#login-btn").addEventListener("click", enter);
   login.addEventListener("keydown", (e) => { if (e.key === "Enter") enter(); });
-  if (sessionStorage.getItem("minra.auth")) login.classList.add("gone");
+  if (session.get("minra.auth")) login.classList.add("gone");
 
   /* ---------- boot ---------- */
   const u = D.tenant.user;
