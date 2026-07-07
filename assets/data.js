@@ -43,6 +43,7 @@ window.MINRA = {
       contact: "Jürgen Bade",
       contactRole: "Head of Procurement",
       stage: "Proposal sent",
+      expectedClose: "2026-10",
       value: 480000,
       health: "good",
       lastActivity: "2026-07-06",
@@ -68,7 +69,8 @@ window.MINRA = {
         { name: "Pilot: 12 trucks + 4 chargers", value: 96000, status: "Accepted", sent: "2026-04-14" }
       ],
       presentations: [
-        { name: "Fleet Electrification Proposal — Signature", tier: "Signature", url: "presentations/mueller-signature.html", generated: "2026-07-05", views: 14 },
+        { name: "Fleet Electrification Proposal — Signature", tier: "Signature", url: "presentations/mueller-signature.html", generated: "2026-07-05", views: 14,
+          slideStats: [["Cover", 18], ["Situation", 42], ["Proposal", 55], ["The numbers", 96], ["Pricing", 128], ["Technical fit", 64], ["Rollout", 31], ["Next step", 22]] },
         { name: "Fleet Electrification Proposal — Essential", tier: "Essential", url: "presentations/mueller-essential.html", generated: "2026-07-05", views: 5 }
       ],
       timeline: [
@@ -87,6 +89,7 @@ window.MINRA = {
       contact: "Ingrid Solheim",
       contactRole: "Technical Director",
       stage: "Negotiation",
+      expectedClose: "2026-09",
       value: 340000,
       health: "good",
       lastActivity: "2026-07-03",
@@ -124,6 +127,7 @@ window.MINRA = {
       contact: "Marten Kask",
       contactRole: "Fleet Manager",
       stage: "Hub invited",
+      expectedClose: "2026-12",
       value: 210000,
       health: "warning",
       lastActivity: "2026-06-21",
@@ -150,6 +154,7 @@ window.MINRA = {
       contact: "Agnieszka Nowak",
       contactRole: "COO",
       stage: "Qualified",
+      expectedClose: "2026-11",
       value: 390000,
       health: "good",
       lastActivity: "2026-07-05",
@@ -168,7 +173,8 @@ window.MINRA = {
       ],
       proposals: [],
       presentations: [
-        { name: "Company introduction — Signature", tier: "Signature", url: "presentations/kowalski-intro-signature.html", generated: "2026-07-06", views: 3 }
+        { name: "Company introduction — Signature", tier: "Signature", url: "presentations/kowalski-intro-signature.html", generated: "2026-07-06", views: 3,
+          slideStats: [["Cover", 12], ["Who we are", 34], ["What we make", 48], ["Greenfield", 87], ["Proof", 40], ["How we work", 25], ["Next step", 15]] }
       ],
       timeline: [
         { when: "2026-07-05 16:12", who: "Agnieszka Nowak", what: "Viewed company introduction deck (full, 4 min)" },
@@ -184,6 +190,7 @@ window.MINRA = {
       contact: "Sara Lindqvist",
       contactRole: "CEO",
       stage: "Verbal commit",
+      expectedClose: "2027-01",
       value: 240000,
       health: "good",
       lastActivity: "2026-07-07",

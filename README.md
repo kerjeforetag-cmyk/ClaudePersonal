@@ -49,6 +49,9 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Price positioning** — the competitor view opens with a computed summary of where you stand vs verified market prices, and which estimated OEM prices undercut you
 - **Trip stacking** — each travel window lists who else and which hubs are in that country
 - **Keyboard-first** — Ctrl/⌘+K jumps to search; arrow keys navigate results
+- **Forecast** — every open deal lands in its expected close month at value × win likelihood; best case / expected / commit totals and a monthly revenue chart
+- **Deck engagement analytics** — per-section viewing time on shared decks, with the dominant section called out ("the tell") and fed into Next best actions
+- **First-run tour** — a three-door welcome on first sign-in (see your day / open a hub / generate a deck)
 
 ## Try it
 

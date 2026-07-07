@@ -192,6 +192,13 @@
       if (news && !onlyHubId) {
         out.push({ pr: 2, hub: h, title: "News affects " + h.company, why: news.title + ".", label: "Read it", hash: "#/flow" });
       }
+      const statDeck = (h.presentations || []).find((p) => p.slideStats && p.views > 3);
+      if (statDeck) {
+        const total = statDeck.slideStats.reduce((a, s) => a + s[1], 0);
+        const top = statDeck.slideStats.reduce((a, b) => (b[1] > a[1] ? b : a));
+        const pct = Math.round(top[1] / total * 100);
+        if (pct >= 25) out.push({ pr: 2, hub: h, title: "“" + top[0] + "” is the tell at " + h.company, why: h.contact + "'s team spends " + pct + "% of deck time on “" + top[0] + "” — open that conversation, not another feature demo.", label: "See engagement", hash: "#/hub/" + h.id + "/decks" });
+      }
     });
     if (!onlyHubId) {
       const ourList = { "NC-LI4880": 11900, "NC-CHG30": 6400, "NC-BMS-FLEET": 240 };
@@ -222,7 +229,8 @@
     pricing: ["Verified vs estimated", "A Verified price was actually seen — a tender award, a distributor list, a quote a customer shared. An Estimated OEM price is our model of what the competitor charges OEMs when no document exists. Never mix them up in a negotiation."],
     people: ["Know who matters before you land", "The people who decide, influence or block your deals — per country, with how they work and where to meet them. Add your own notes after every meeting."],
     settings: ["Make it yours", "Branding flows into every hub and generated deck. The plan is simple on purpose: one monthly price, Essential decks included, Signature decks pay-as-you-go — no seats, no tiers."],
-    proposals: ["One pipeline, many hubs", "Every offer from every hub in one table — open value, accepted value, and where each deal stands. Create proposals here or inside a hub; both land in the same place."]
+    proposals: ["One pipeline, many hubs", "Every offer from every hub in one table — open value, accepted value, and where each deal stands. Create proposals here or inside a hub; both land in the same place."],
+    forecast: ["Revenue you can plan around", "Every open deal lands in its expected close month, weighted by win likelihood. Best case is everything; expected is what the math says; commit is only deals above 70% likely."]
   };
   function helpNote(key) {
     if (store.get("minra.hn." + key) === "off") return "";
@@ -350,6 +358,7 @@
       industry: val("nh-industry") || "B2B industry",
       contact: val("nh-contact") || "—", contactRole: val("nh-role") || "",
       stage: "Qualified", value: Number(val("nh-value")) || 0, health: "good",
+      expectedClose: (() => { const ec = new Date(); ec.setMonth(ec.getMonth() + 3); return ec.getFullYear() + "-" + String(ec.getMonth() + 1).padStart(2, "0"); })(),
       lastActivity: today, members: 1,
       activity30d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
       about: (val("nh-industry") || "New customer") + " — hub created " + today + ". Publish a price list and invite the customer team to get started.",
@@ -490,6 +499,7 @@
     { hash: "#/dashboard", name: "Dashboard", ico: "M3 13h7V3H3v10Zm0 8h7v-6H3v6Zm11 0h7V11h-7v10Zm0-18v6h7V3h-7Z" },
     { hash: "#/hubs", name: "Customer hubs", ico: "M12 3 2 9l10 6 10-6-10-6Zm-6 9.5V17l6 3.5 6-3.5v-4.5" },
     { hash: "#/proposals", name: "Proposals", ico: "M6 2h9l5 5v15H6Z M14 2v6h6 M9 13h6 M9 17h4" },
+    { hash: "#/forecast", name: "Forecast", ico: "M3 17l6-6 4 4 8-8 M15 7h6v6" },
     { hash: "#/studio", name: "Presentation studio", ico: "M4 4h16v11H4z M8 20l4-3 4 3" },
     { hash: "#/flow", name: "Market flow", ico: "M3 12h4l2-6 4 12 2-6h6" },
     { hash: "#/travel", name: "Travel planner", ico: "M2 16l20-6-8 4-2 6-2-4-8 0Z" },
@@ -531,7 +541,7 @@
         <div>
           <div style="font-size:12.5px;color:#cdc9ba">Open pipeline</div>
           <div class="hero-kpi">${fmtM(k.pipelineValue)}<small>${k.pipelineDelta >= 0 ? "▲" : "▼"} ${Math.abs(k.pipelineDelta)}%</small></div>
-          <div style="font-size:12px;color:#cdc9ba" data-tip="Each deal weighted by its win likelihood">${fmtM(weighted)} weighted by win likelihood</div>
+          <a href="#/forecast" style="font-size:12px;color:#cdc9ba" data-tip="Each deal weighted by its win likelihood — open the forecast">${fmtM(weighted)} weighted · see forecast →</a>
         </div>
       </div>
     </div>
@@ -663,13 +673,35 @@
         </tbody></table></div>`
         : `<div class="card"><div class="empty">No proposals yet.${custView ? "" : `<br><br><button class="btn primary sm" data-act="add-proposal">+ New proposal</button>`}</div></div>`;
     } else if (tab === "decks") {
+      const statDeck = custView ? null : h.presentations.find((p) => p.slideStats);
+      let engagement = "";
+      if (statDeck) {
+        const total = statDeck.slideStats.reduce((a, s) => a + s[1], 0);
+        const max = Math.max(...statDeck.slideStats.map((s) => s[1]));
+        const top = statDeck.slideStats.reduce((a, b) => (b[1] > a[1] ? b : a));
+        const fmtS = (s) => s >= 60 ? Math.floor(s / 60) + "m " + (s % 60) + "s" : s + "s";
+        engagement = `<div class="card" style="margin-top:16px">
+          <h3>Deck engagement <span class="badge neutral">internal</span></h3>
+          <p class="sub">${esc(statDeck.name)} — where ${esc(h.contact)}'s team actually spends its time</p>
+          <div class="bar-chart" style="margin-top:12px">
+            ${statDeck.slideStats.map(([name, secs]) => `
+            <div class="bc-row" data-tip="${esc(name)}: ${fmtS(secs)} of ${fmtS(total)} total">
+              <div class="bc-label">${esc(name)}</div>
+              <div class="bc-track"><div class="bc-fill" style="width:${(secs / max * 100).toFixed(1)}%"></div></div>
+              <div class="bc-val">${fmtS(secs)}</div>
+            </div>`).join("")}
+          </div>
+          <div class="axis-note">Viewing time per section, all customer sessions combined.</div>
+          <div class="reason" style="margin-top:10px"><span><b>“${esc(top[0])}” holds ${Math.round(top[1] / total * 100)}% of viewing time.</b> That's the conversation your customer wants to have — open with it.</span></div>
+        </div>`;
+      }
       body = h.presentations.length ? `<div class="grid cols-2">${h.presentations.map((p) => `
         <div class="card deck-result hover">
           <div class="deck-thumb ${p.tier === "Essential" ? "light" : ""}">${esc(p.tier)}</div>
           <div style="flex:1"><b style="font-size:14px">${esc(p.name)}</b>
             <span class="src" style="display:block">Generated ${esc(p.generated)} · ${p.views} customer views</span>
             <a class="btn dark sm" style="margin-top:8px" href="${esc(p.url)}" target="_blank" rel="noopener">Open deck ↗</a>
-          </div></div>`).join("")}</div>`
+          </div></div>`).join("")}</div>${engagement}`
         : `<div class="card"><div class="empty">No presentations yet.<br><br><button class="btn primary sm" data-act="gen-for" data-hub="${h.id}">Generate one →</button></div></div>`;
     } else if (tab === "activity") {
       const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-note">+ Log activity</button></div>`;
@@ -957,6 +989,66 @@
       </tbody></table></div>`;
   }
 
+  /* ---------- forecast ---------- */
+  const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function monthLabel(ym) {
+    const [y, m] = ym.split("-").map(Number);
+    return MONTH_NAMES[m - 1] + (y > new Date().getFullYear() ? " ’" + String(y).slice(2) : "");
+  }
+  function nextMonths(n) {
+    const d = new Date(); d.setDate(1);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      out.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"));
+      d.setMonth(d.getMonth() + 1);
+    }
+    return out;
+  }
+  function vForecast() {
+    const months = nextMonths(7);
+    const deals = D.hubs.filter((h) => h.value > 0).map((h) => {
+      let close = h.expectedClose || months[3];
+      if (close < months[0]) close = months[0];
+      if (close > months[months.length - 1]) close = months[months.length - 1];
+      const score = dealScore(h);
+      return { h, close, score, weighted: Math.round(h.value * score / 100) };
+    }).sort((a, b) => a.close.localeCompare(b.close));
+    const byMonth = months.map((m) => deals.filter((d) => d.close === m).reduce((a, d) => a + d.weighted, 0));
+    const best = deals.reduce((a, d) => a + d.h.value, 0);
+    const expected = deals.reduce((a, d) => a + d.weighted, 0);
+    const commit = deals.filter((d) => d.score >= 70).reduce((a, d) => a + d.h.value, 0);
+    const maxM = Math.max(...byMonth, 1);
+    return `
+    ${helpNote("forecast")}
+    <div class="section-head"><h2>Forecast</h2><span class="sub">expected revenue by close month, weighted by win likelihood</span></div>
+    <div class="grid cols-3" style="margin-bottom:16px">
+      <div class="card stat rise rise-1"><span class="label">Best case (everything closes)</span><span class="value">${fmtEUR(best)}</span></div>
+      <div class="card stat rise rise-2"><span class="label">Expected (likelihood-weighted)</span><span class="value">${fmtEUR(expected)}</span></div>
+      <div class="card stat rise rise-3"><span class="label">Commit (≥70% likely only)</span><span class="value">${fmtEUR(commit)}</span></div>
+    </div>
+    <div class="card rise rise-2" style="margin-bottom:16px">
+      <h3>Expected revenue by month</h3><p class="sub">Next ${months.length} months, € weighted</p>
+      <div class="col-chart">
+        ${months.map((m, i) => `
+        <div class="col" data-tip="${monthLabel(m)}: ${fmtEUR(byMonth[i])} expected">
+          <div class="v">${byMonth[i] ? "€" + Math.round(byMonth[i] / 1000) + "k" : ""}</div>
+          <div class="bar-slot"><div class="bar" style="height:${Math.max(byMonth[i] ? 10 : 2, byMonth[i] / maxM * 120)}px"></div></div>
+          <div class="m">${monthLabel(m)}</div>
+        </div>`).join("")}
+      </div>
+      <div class="axis-note">Deals land in their expected close month at value × win likelihood.</div>
+    </div>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Deal</th><th>Close month</th><th class="num">Value</th><th class="num">Likelihood</th><th class="num">Weighted</th></tr></thead>
+      <tbody>${deals.map((d) => `<tr>
+        <td><a href="#/hub/${d.h.id}" style="text-decoration:none"><b>${d.h.flag} ${esc(d.h.company)}</b></a><span class="src" style="display:block">${esc(d.h.stage)}</span></td>
+        <td>${monthLabel(d.close)}</td>
+        <td class="num">${fmtEUR(d.h.value)}</td>
+        <td class="num">${scoreBadge(d.score)}</td>
+        <td class="num"><b>${fmtEUR(d.weighted)}</b></td></tr>`).join("")}
+      </tbody></table></div>`;
+  }
+
   /* ---------- settings ---------- */
   function vSettings() {
     const accentKey = store.get("minra.accent") || "terracotta";
@@ -1020,6 +1112,7 @@
     dashboard: { title: "Dashboard", fn: vDashboard },
     hubs: { title: "Customer hubs", fn: vHubs },
     proposals: { title: "Proposals", fn: vProposals },
+    forecast: { title: "Forecast", fn: vForecast },
     studio: { title: "Presentation studio", fn: vStudio },
     flow: { title: "Market flow", fn: vFlow },
     travel: { title: "Travel planner", fn: vTravel },
@@ -1074,6 +1167,14 @@
 
     if (e.target.closest("#gen-btn")) { runGeneration(); return; }
 
+    const tr = e.target.closest("[data-tour]");
+    if (tr) {
+      store.set("minra.toured", "1");
+      closeModal();
+      if (tr.dataset.tour) { location.hash = tr.dataset.tour; render(); }
+      return;
+    }
+
     const sw = e.target.closest("[data-accent]");
     if (sw) { applyAccent(sw.dataset.accent); render(); toast("Accent updated across the workspace."); return; }
 
@@ -1102,7 +1203,7 @@
         return;
       }
       if (a === "reset-demo") {
-        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen"].forEach((k) => store.del(k));
+        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen", "minra.toured"].forEach((k) => store.del(k));
         Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
         ["crm", "erp", "wms", "cal"].forEach((k) => store.del("minra.int." + k));
         toast("Demo data reset.");
@@ -1211,15 +1312,28 @@
   });
   $("#menu-btn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
 
+  /* ---------- first-run tour ---------- */
+  function maybeTour() {
+    if (lockedCustomer || store.get("minra.toured") || !modalWrap.hidden) return;
+    openModal(`
+      <h3>Welcome to Minra</h3>
+      <p class="sub">Three places do most of the work. Pick where to start — you can't break anything, and Settings can reset the demo anytime.</p>
+      <div class="pick" data-tour="#/dashboard" style="margin-bottom:10px"><b>1 · See your day</b><p>Pipeline, next best actions, market news and travel in one morning view.</p></div>
+      <div class="pick" data-tour="#/hub/mueller" style="margin-bottom:10px"><b>2 · Open a customer hub</b><p>The prices, documents, proposals and decks you share with one customer.</p></div>
+      <div class="pick" data-tour="#/studio" style="margin-bottom:10px"><b>3 · Generate a presentation</b><p>From hub data to a deck your customer remembers — in seconds.</p></div>
+      <div class="modal-actions"><button class="btn ghost sm" data-tour="">Skip, I'll explore</button></div>`);
+  }
+
   /* ---------- login ---------- */
   const login = $("#login");
   function enter() {
     session.set("minra.auth", "1");
     login.classList.add("gone");
+    setTimeout(maybeTour, 650);
   }
   $("#login-btn").addEventListener("click", enter);
   login.addEventListener("keydown", (e) => { if (e.key === "Enter") enter(); });
-  if (session.get("minra.auth")) login.classList.add("gone");
+  if (session.get("minra.auth")) { login.classList.add("gone"); setTimeout(maybeTour, 600); }
 
   /* ---------- boot ---------- */
   const u = D.tenant.user;

@@ -544,6 +544,15 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .grow { flex: 1; }
 
+/* ---------- forecast column chart ---------- */
+.col-chart { display: flex; gap: 10px; align-items: flex-end; margin-top: 16px; }
+.col-chart .col { flex: 1; min-width: 0; text-align: center; }
+.col-chart .v { font-size: 11.5px; color: var(--ink-2); margin-bottom: 4px; font-variant-numeric: tabular-nums; min-height: 16px; }
+.col-chart .bar-slot { height: 124px; display: flex; align-items: flex-end; justify-content: center; }
+.col-chart .bar { width: 100%; max-width: 56px; background: var(--s1); border-radius: 4px 4px 0 0; transition: transform .2s var(--ease); transform-origin: bottom; }
+.col-chart .col:hover .bar { transform: scaleY(1.03); }
+.col-chart .m { font-size: 11px; color: var(--ink-3); margin-top: 6px; white-space: nowrap; }
+
 /* ---------- quote builder ---------- */
 .qty-in {
   width: 60px; padding: 6px 8px; text-align: right;
