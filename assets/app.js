@@ -145,6 +145,72 @@
       <div class="axis-note">Day score 0–100 — customer availability · events · travel cost · weather. Darker = better.</div>`;
   }
 
+  /* ---------- intelligence: deal scores & next best actions ---------- */
+  const STAGE_BASE = { "Qualified": 20, "Hub invited": 35, "Proposal sent": 55, "Negotiation": 70, "Verbal commit": 90 };
+  function engagementDelta(hub) {
+    const a = hub.activity30d || [];
+    if (a.length < 6) return 0;
+    const recent = a.slice(-3).reduce((x, y) => x + y, 0);
+    const prior = a.slice(-6, -3).reduce((x, y) => x + y, 0);
+    if (prior === 0) return recent > 0 ? 1 : 0;
+    return (recent - prior) / prior;
+  }
+  function dealScore(hub) {
+    let s = STAGE_BASE[hub.stage] || 20;
+    const d = engagementDelta(hub);
+    s += d > 0.3 ? 8 : d < -0.3 ? -10 : 0;
+    if (hub.health === "warning") s -= 12;
+    if (hub.health === "critical") s -= 25;
+    if ((hub.presentations || []).some((p) => p.views > 5)) s += 5;
+    return Math.max(5, Math.min(95, Math.round(s)));
+  }
+  const daysSince = (iso) => Math.max(0, Math.round((Date.now() - new Date(iso + "T12:00:00").getTime()) / 86400000));
+  function computeInsights(onlyHubId) {
+    const out = [];
+    D.hubs.forEach((h) => {
+      if (onlyHubId && h.id !== onlyHubId) return;
+      const drop = engagementDelta(h);
+      if ((h.health === "warning" || drop < -0.4) && daysSince(h.lastActivity) > 7) {
+        const reason = drop < -0.05
+          ? "Hub activity fell " + Math.round(Math.abs(drop) * 100) + "% and nobody has touched the hub in " + daysSince(h.lastActivity) + " days."
+          : "Engagement has cooled — nobody has touched the hub in " + daysSince(h.lastActivity) + " days.";
+        out.push({ pr: 1, hub: h, title: "Re-engage " + h.company, why: reason, label: "Open hub", hash: "#/hub/" + h.id });
+      }
+      (h.proposals || []).forEach((p) => {
+        if (p.status === "Awaiting customer" && daysSince(p.sent) >= 5) {
+          const viewed = (h.presentations || []).find((x) => x.views > 0);
+          out.push({ pr: 1, hub: h, title: "Follow up: " + p.name, why: "Sent " + daysSince(p.sent) + " days ago, no answer yet." + (viewed ? " " + h.contact + " viewed the deck recently — it's warm." : ""), label: "Open proposals", hash: "#/hub/" + h.id + "/proposals" });
+        }
+      });
+      if (h.stage === "Verbal commit") {
+        out.push({ pr: 2, hub: h, title: "Close " + h.company, why: "Verbal commit on the table — send the final agreement while the momentum holds.", label: "Open hub", hash: "#/hub/" + h.id + "/proposals" });
+      }
+      if (!(h.priceList || []).length && h.stage !== "Qualified") {
+        out.push({ pr: 3, hub: h, title: "Publish prices for " + h.company, why: "The hub is live but has no customer price list — buyers can't move without numbers.", label: "Price list", hash: "#/hub/" + h.id + "/prices" });
+      }
+      const news = D.news.find((n) => n.relatedHub === h.id);
+      if (news && !onlyHubId) {
+        out.push({ pr: 2, hub: h, title: "News affects " + h.company, why: news.title + ".", label: "Read it", hash: "#/flow" });
+      }
+    });
+    if (!onlyHubId) {
+      const ourList = { "NC-LI4880": 11900, "NC-CHG30": 6400, "NC-BMS-FLEET": 240 };
+      D.competitors.forEach((c) => {
+        const ours = ourList[c.comparableTo];
+        if (ours && c.price < ours) {
+          out.push({ pr: 3, hub: null, title: "Price pressure on " + c.comparableTo, why: c.vendor + " " + (c.kind === "verified" ? "(verified)" : "(est. OEM)") + " sits " + Math.round((ours - c.price) / ours * 100) + "% under your list — have the value story ready.", label: "Pricing intel", hash: "#/pricing" });
+        }
+      });
+      const trip = D.travel.suggestions[0];
+      if (trip) out.push({ pr: 3, hub: null, title: "Lock the " + trip.destination.split(",")[0] + " window", why: trip.reasons[0] + ".", label: "Travel planner", hash: "#/travel" });
+    }
+    out.sort((a, b) => a.pr - b.pr);
+    const seen = new Set();
+    return out.filter((i) => { const k = i.title; if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+  const scoreBadge = (s) =>
+    `<span class="badge ${s >= 65 ? "good" : s >= 40 ? "neutral" : "warn"}" data-tip="Win likelihood — stage, engagement trend and hub health">${s}% likely</span>`;
+
   /* ---------- help notes ---------- */
   const HELP = {
     dashboard: ["Your day, already sorted", "Minra pulls your pipeline, hub activity, market news and travel into one morning view — so you start with the three things that move revenue, not with admin."],
@@ -200,10 +266,18 @@
       : `<div class="sr-empty">No matches for “${esc(q)}”.</div>`;
     sBox.hidden = false;
   }
-  sInput.addEventListener("input", doSearch);
+  let selIdx = -1;
+  sInput.addEventListener("input", () => { selIdx = -1; doSearch(); });
   sInput.addEventListener("keydown", (e) => {
+    const items = [...sBox.querySelectorAll("[data-go]")];
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && items.length) {
+      e.preventDefault();
+      selIdx = (selIdx + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items.forEach((el, i) => el.classList.toggle("sel", i === selIdx));
+      return;
+    }
     if (e.key === "Escape") { sBox.hidden = true; sInput.blur(); }
-    if (e.key === "Enter") { const f = sBox.querySelector("[data-go]"); if (f) goTo(f.dataset.go); }
+    if (e.key === "Enter") { const f = items[selIdx] || items[0]; if (f) goTo(f.dataset.go); }
   });
   document.addEventListener("click", (e) => {
     const g = e.target.closest("[data-go]");
@@ -444,6 +518,8 @@
     const k = D.kpis;
     const nextTrip = D.travel.suggestions[0];
     const topNews = D.news.slice(0, 3);
+    const actions = computeInsights().slice(0, 4);
+    const weighted = D.hubs.reduce((a, h) => a + (h.value || 0) * dealScore(h) / 100, 0);
     return `
     ${helpNote("dashboard")}
     <div class="hero ambient rise">
@@ -455,8 +531,21 @@
         <div>
           <div style="font-size:12.5px;color:#cdc9ba">Open pipeline</div>
           <div class="hero-kpi">${fmtM(k.pipelineValue)}<small>${k.pipelineDelta >= 0 ? "▲" : "▼"} ${Math.abs(k.pipelineDelta)}%</small></div>
+          <div style="font-size:12px;color:#cdc9ba" data-tip="Each deal weighted by its win likelihood">${fmtM(weighted)} weighted by win likelihood</div>
         </div>
       </div>
+    </div>
+
+    <div class="section-head" style="margin-top:4px"><h2>Next best actions</h2><span class="sub">what moves revenue today — computed from your hubs, proposals and market</span></div>
+    <div class="grid cols-2" style="margin-bottom:22px">
+      ${actions.map((a, i) => `
+      <div class="card hover rise rise-${(i % 4) + 1}" style="display:flex;gap:14px;align-items:flex-start">
+        <div class="hn-ico" style="background:var(--ink);flex:none">${i + 1}</div>
+        <div style="flex:1"><b style="font-size:14.5px">${esc(a.title)}</b>
+          <p class="sub" style="margin:4px 0 10px;font-size:13px;line-height:1.5">${esc(a.why)}</p>
+          <a class="btn ghost sm" href="${a.hash}">${esc(a.label)} →</a>
+        </div>
+      </div>`).join("")}
     </div>
 
     <div class="grid cols-4">
@@ -485,10 +574,11 @@
   }
 
   function newsCard(n, i) {
+    const rel = n.relatedHub ? D.hubs.find((x) => x.id === n.relatedHub) : null;
     return `<div class="card news-card hover rise rise-${(i % 4) + 1}">
       <div class="news-top"><span class="badge neutral">${esc(n.territory)}</span><span class="badge brand">${esc(n.tag)}</span><span>${esc(n.date)}</span></div>
       <h3>${esc(n.title)}</h3><p>${esc(n.body)}</p>
-      <div class="news-top">${esc(n.source)}</div>
+      <div class="news-top">${esc(n.source)}${rel ? `<span class="grow"></span><a class="badge good" href="#/hub/${rel.id}" style="text-decoration:none" data-tip="This news affects an account of yours">→ ${esc(rel.company.split(" ")[0])} hub</a>` : ""}</div>
     </div>`;
   }
 
@@ -504,7 +594,7 @@
           <div class="hub-mark">${h.flag}</div>
           <div><h3>${esc(h.company)}</h3><span class="sub">${esc(h.industry)}</span></div>
         </div>
-        <div class="hub-meta">${stageBadge(h.stage)}${healthBadge(h.health)}</div>
+        <div class="hub-meta">${stageBadge(h.stage)}${healthBadge(h.health)}${scoreBadge(dealScore(h))}</div>
         <div class="hub-meta"><span class="sub">Deal value</span><b style="font-size:15px">${fmtEUR(h.value)}</b></div>
         ${sparkline(h.activity30d, 220, 30)}
         <div class="hub-foot"><span>${h.members} members</span><span class="grow"></span><span>active ${esc(h.lastActivity)}</span></div>
@@ -531,21 +621,31 @@
           <div style="margin-top:14px">${sparkline(h.activity30d, 380, 56)}</div>
           <div class="hub-meta" style="margin-top:12px">${healthBadge(h.health)}<span class="sub">${h.members} members · last active ${esc(h.lastActivity)}</span></div>
         </div>`;
+      const tips = custView ? [] : computeInsights(h.id).slice(0, 2);
       body = `<div class="grid ${custView ? "" : "cols-2"}">
         <div class="card"><h3>About ${custView ? "this partnership" : "this customer"}</h3><p class="sub" style="margin-top:8px;font-size:13.5px;line-height:1.6">${esc(h.about)}</p></div>
         ${pulse}
-      </div>`;
+      </div>
+      ${tips.length ? `<div class="card" style="margin-top:16px"><h3>Minra suggests <span class="badge neutral">internal</span></h3>
+        ${tips.map((t) => `<div class="reason" style="margin-top:8px"><span><b>${esc(t.title)}</b> — ${esc(t.why)} <a href="${t.hash}" style="color:var(--accent-ink);font-weight:600">${esc(t.label)} →</a></span></div>`).join("")}
+      </div>` : ""}`;
     } else if (tab === "prices") {
       const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-price">+ Add product</button></div>`;
       body = h.priceList.length ? `${addBtn}<div class="table-wrap"><table class="data">
-        <thead><tr><th>SKU</th><th>Product</th><th class="num">List price</th><th class="num">Your hub price</th><th class="num">MOQ</th>${custView ? "" : "<th></th>"}</tr></thead>
+        <thead><tr><th>SKU</th><th>Product</th><th class="num">List price</th><th class="num">Your hub price</th><th class="num">MOQ</th><th class="num">Qty</th>${custView ? "" : "<th></th>"}</tr></thead>
         <tbody>${h.priceList.map((p, i) => `<tr>
           <td style="font-family:var(--mono);font-size:12px">${esc(p.sku)}</td><td>${esc(p.name)}</td>
           <td class="num" style="color:var(--ink-3);text-decoration:line-through">${fmtEUR(p.list)}</td>
           <td class="num"><b>${fmtEUR(p.hub)}</b></td><td class="num">${p.moq}</td>
+          <td class="num"><input class="qty-in" data-i="${i}" type="number" min="0" placeholder="0" aria-label="Quantity for ${esc(p.sku)}" /></td>
           ${custView ? "" : `<td class="num" style="white-space:nowrap"><button class="icon-btn" data-act="edit-price" data-i="${i}" title="Edit">✎</button><button class="icon-btn" data-act="del-price" data-i="${i}" title="Remove">×</button></td>`}</tr>`).join("")}
         </tbody></table></div>
-        <p class="axis-note" style="margin-top:10px">Hub prices are customer-specific and visible to invited members only. Valid Q3 2026.</p>`
+        <div class="quote-bar" id="quote-bar" hidden>
+          <b>Quote: <span id="quote-total">€0</span></b><span style="font-size:12.5px;color:#cdc9ba"><span id="quote-items">0</span> units at hub prices</span>
+          <span class="grow"></span>
+          <button class="btn primary sm" data-act="quote-proposal">${custView ? "Request as proposal" : "Turn into proposal"}</button>
+        </div>
+        <p class="axis-note" style="margin-top:10px">Hub prices are customer-specific and visible to invited members only. Valid Q3 2026. Enter quantities to build a quote.</p>`
         : `<div class="card"><div class="empty">No customer-specific price list yet.${custView ? "" : `<br><br><button class="btn primary sm" data-act="add-price">Publish price list</button>`}</div></div>`;
     } else if (tab === "docs") {
       const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-doc">+ Share document</button></div>`;
@@ -585,7 +685,8 @@
       </div>` : "";
     const heroRight = custView ? "" : `
         <div style="text-align:right"><div style="font-size:12px;color:#cdc9ba">Deal value</div>
-        <div style="font-size:28px;font-weight:650">${fmtEUR(h.value)}</div></div>`;
+        <div style="font-size:28px;font-weight:650">${fmtEUR(h.value)}</div>
+        <div style="font-size:12px;color:#cdc9ba">win likelihood ${dealScore(h)}%</div></div>`;
     const heroActions = custView
       ? `<span class="badge brand">Shared with ${h.members} members</span>`
       : `${stageBadge(h.stage)}
@@ -749,6 +850,18 @@
           ${t.meetings.map((m) => `<div class="reason"><span><b>${esc(m.slot)}</b> — ${esc(m.who)}<br><span class="src">${esc(m.note)}</span></span></div>`).join("")}
         </div>
       </div>
+      ${(() => {
+        const country = (t.destination.split(", ")[1] || "").trim();
+        const nearbyPeople = D.people.filter((p) => p.country === country && !t.meetings.some((m) => m.who.includes(p.name)));
+        const nearbyHubs = D.hubs.filter((hh) => hh.country === country);
+        if (!nearbyPeople.length && !nearbyHubs.length) return "";
+        return `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)">
+          <b style="font-size:13px">Also in ${esc(country)} while you're there</b>
+          <div class="chips" style="margin-top:8px">
+            ${nearbyHubs.map((hh) => `<a class="chip" href="#/hub/${hh.id}" style="text-decoration:none">${hh.flag} ${esc(hh.company)}</a>`).join("")}
+            ${nearbyPeople.slice(0, 3).map((p) => `<a class="chip" href="#/people" style="text-decoration:none">${esc(p.name)} · ${esc(p.org)}</a>`).join("")}
+          </div></div>`;
+      })()}
     </div>`).join("")}`;
   }
 
@@ -757,8 +870,19 @@
   function vPricing() {
     const rows = D.competitors.filter((c) => priceFilter === "all" || c.kind === priceFilter);
     const our = { "NC-LI4880": 11900, "NC-CHG30": 6400, "NC-BMS-FLEET": 240 };
+    const comps = D.competitors.filter((c) => our[c.comparableTo]);
+    const verifiedDeltas = comps.filter((c) => c.kind === "verified").map((c) => Math.round((c.price - our[c.comparableTo]) / our[c.comparableTo] * 100));
+    const undercuts = comps.filter((c) => c.price < our[c.comparableTo]);
+    const positioning = verifiedDeltas.length ? `
+      <div class="card" style="margin-bottom:16px"><h3>Your position, computed</h3>
+        <p class="sub" style="margin-top:6px;font-size:13.5px;line-height:1.6">
+          Verified market prices on comparable items run <b style="color:var(--ink)">${Math.min(...verifiedDeltas) >= 0 ? "+" : ""}${Math.min(...verifiedDeltas)}% to +${Math.max(...verifiedDeltas)}%</b> against your list — you are not the expensive option where it's provable.
+          ${undercuts.length ? `Watch: <b style="color:var(--ink)">${undercuts.map((u) => esc(u.vendor) + " " + esc(u.product) + " (" + (u.kind === "verified" ? "verified" : "est. OEM") + ", −" + Math.round((our[u.comparableTo] - u.price) / our[u.comparableTo] * 100) + "%)").join(", ")}</b> — bring the TCO story, not a discount.` : ""}
+        </p>
+      </div>` : "";
     return `
     ${helpNote("pricing")}
+    ${positioning}
     <div class="section-head"><h2>Competitor pricing</h2><span class="sub">what the market actually pays</span><span class="grow"></span>
       <div class="chips">
         <button class="chip ${priceFilter === "all" ? "on" : ""}" data-pf="all">All</button>
@@ -1025,6 +1149,16 @@
       if (a === "add-note") { FORMS.note(); return; }
       if (a === "add-person") { FORMS.person(); return; }
       if (a === "add-comp") { FORMS.comp(); return; }
+      if (a === "quote-proposal") {
+        const q = quoteState();
+        if (!q.total || !q.hub) return;
+        q.hub.proposals.push({ name: "Quote " + today() + " — " + q.lines.join(", "), value: q.total, status: custView ? "Awaiting customer" : "Draft", sent: today() });
+        q.hub.timeline.unshift({ when: nowStamp(), who: custView ? q.hub.contact : D.tenant.user.name, what: (custView ? "Requested proposal from quote: " : "Created proposal from quote: ") + fmtEUR(q.total) });
+        persist(); refreshNotifDot();
+        toast("Proposal created: " + fmtEUR(q.total));
+        location.hash = "#/hub/" + q.hub.id + "/proposals"; render();
+        return;
+      }
       if (a.startsWith("save-")) { saveForms(a); return; }
 
       if (a === "share-deck") toast("Deck shared to the hub — the customer team was notified.");
@@ -1033,17 +1167,40 @@
     }
   });
 
+  function quoteState() {
+    const h = hubFromRoute();
+    if (!h) return { total: 0, units: 0, lines: [] };
+    let total = 0, units = 0; const lines = [];
+    document.querySelectorAll(".qty-in").forEach((inp) => {
+      const q = +inp.value || 0;
+      const p = h.priceList[+inp.dataset.i];
+      if (q > 0 && p) { total += q * p.hub; units += q; lines.push(q + " × " + p.sku); }
+    });
+    return { total, units, lines, hub: h };
+  }
   document.addEventListener("input", (e) => {
     if (e.target.id === "ws-name") {
       const v = e.target.value.trim() || D.tenant.name;
       store.set("minra.wsname", v);
       $(".logo-sub").textContent = v.toUpperCase();
     }
+    if (e.target.classList && e.target.classList.contains("qty-in")) {
+      const q = quoteState();
+      const bar = $("#quote-bar");
+      if (!bar) return;
+      bar.hidden = q.total === 0;
+      $("#quote-total").textContent = fmtEUR(q.total);
+      $("#quote-items").textContent = q.units;
+    }
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (!deckOverlay.hidden) { deckOverlay.hidden = true; deckFrame.srcdoc = ""; }
       else if (!modalWrap.hidden) closeModal();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      sInput.focus(); sInput.select();
     }
   });
 

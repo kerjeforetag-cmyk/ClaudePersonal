@@ -542,6 +542,26 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .int-row .src { display: block; }
 .int-row .grow { flex: 1; }
 
+.grow { flex: 1; }
+
+/* ---------- quote builder ---------- */
+.qty-in {
+  width: 60px; padding: 6px 8px; text-align: right;
+  border: 1px solid var(--line); border-radius: 8px;
+  font: inherit; font-size: 13px; background: var(--card); color: var(--ink);
+  -moz-appearance: textfield;
+}
+.qty-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.quote-bar {
+  position: sticky; bottom: 16px; z-index: 30;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--night); color: #fff;
+  border-radius: 999px; padding: 10px 12px 10px 24px;
+  box-shadow: var(--shadow-lift); margin-top: 14px;
+  animation: viewIn .3s var(--ease) both;
+}
+.quote-bar[hidden] { display: none; }
+
 /* ---------- inline table actions ---------- */
 .icon-btn { padding: 2px 8px; border-radius: 7px; color: var(--ink-3); font-size: 14px; line-height: 1.4; }
 .icon-btn:hover { background: var(--card-2); color: var(--ink); }

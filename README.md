@@ -43,6 +43,12 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Proposals module** — every offer across every hub in one table, with open and accepted totals
 - **Customer invite links** — "Invite customer" produces a `?customer=<hub>` link that opens the hub in a locked customer-only mode: no sidebar, no internal data, "powered by minra"
 - **Territory summary** — Market Flow leads with where you sell: hubs, open value and news per territory
+- **Next best actions** — a rule-based insight engine reads your hubs, proposals, competitor prices and travel windows and puts the day's highest-leverage moves on the dashboard (and per-hub under "Minra suggests")
+- **Win-likelihood scores** — every deal scored from stage, engagement trend and hub health; the pipeline shows a likelihood-weighted total
+- **Quote builder** — enter quantities in any hub price list and a sticky quote bar totals at hub prices; one click turns it into a proposal
+- **Price positioning** — the competitor view opens with a computed summary of where you stand vs verified market prices, and which estimated OEM prices undercut you
+- **Trip stacking** — each travel window lists who else and which hubs are in that country
+- **Keyboard-first** — Ctrl/⌘+K jumps to search; arrow keys navigate results
 
 ## Try it
 
