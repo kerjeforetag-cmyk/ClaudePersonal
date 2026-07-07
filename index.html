@@ -39,7 +39,9 @@
       <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
       <div class="crumb" id="crumb"><b>Dashboard</b></div>
       <div class="grow"></div>
-      <div class="search">⌕ <input placeholder="Search customers, prices, people…" /></div>
+      <div class="search" id="search-box">⌕ <input id="global-search" placeholder="Search customers, prices, people…" autocomplete="off" />
+        <div class="search-results" id="search-results" hidden></div>
+      </div>
       <button class="btn ghost sm" id="help-toggle" title="Show help notes again">? Help</button>
     </div>
     <main class="content" id="view" aria-live="polite"></main>

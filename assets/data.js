@@ -94,9 +94,27 @@ window.MINRA = {
       activity30d: [1,3,2,4,4,5,3,6,7,5,8,7],
       accent: "#1baf7a",
       about: "Operates 22 electric workboats servicing salmon farms in Nordland. Hybrid-to-full-electric refit program 2026–2028.",
-      priceList: [], docs: [], proposals: [
-        { name: "Workboat refit — batch 2 (8 vessels)", value: 340000, status: "In negotiation", sent: "2026-06-18" }
-      ], presentations: [], timeline: []
+      priceList: [
+        { sku: "NC-MR4890", name: "Marine Li-ion 48V / 900Ah IP67 pack", list: 14800, hub: 13200, moq: 4 },
+        { sku: "NC-MR2445", name: "Marine Li-ion 24V / 450Ah IP67 pack", list: 7600, hub: 6900, moq: 4 },
+        { sku: "NC-SHORE22", name: "ShorePower 22kW quay charger", list: 8900, hub: 8200, moq: 2 },
+        { sku: "NC-BMS-MAR", name: "FleetView Marine telemetry (per vessel / yr)", list: 320, hub: 260, moq: 8 }
+      ],
+      docs: [
+        { name: "NC-MR4890 marine datasheet (IP67, DNV)", type: "PDF", size: "1.9 MB", updated: "2026-06-15" },
+        { name: "DNV-GL type approval certificate", type: "PDF", size: "3.2 MB", updated: "2026-05-08" },
+        { name: "Enova subsidy application — pre-filled template", type: "DOCX", size: "410 kB", updated: "2026-07-01" }
+      ],
+      proposals: [
+        { name: "Workboat refit — batch 2 (8 vessels)", value: 340000, status: "In negotiation", sent: "2026-06-18" },
+        { name: "Batch 1 pilot — 3 vessels", value: 128000, status: "Accepted", sent: "2025-11-02" }
+      ],
+      presentations: [],
+      timeline: [
+        { when: "2026-07-03 10:20", who: "Ingrid Solheim", what: "Downloaded Enova subsidy template" },
+        { when: "2026-06-30 15:41", who: "Alex Kjellberg", what: "Updated batch-2 pricing after Enova ceiling raise" },
+        { when: "2026-06-18 09:02", who: "Alex Kjellberg", what: "Sent proposal: Workboat refit — batch 2" }
+      ]
     },
     {
       id: "baltika",
@@ -113,7 +131,16 @@ window.MINRA = {
       activity30d: [3,2,1,2,1,0,1,0,0,1,0,0],
       accent: "#eda100",
       about: "Tallinn harbor services company. Interest in shore-charging infrastructure; procurement paused until Q4 budget review.",
-      priceList: [], docs: [], proposals: [], presentations: [], timeline: []
+      priceList: [],
+      docs: [
+        { name: "Shore charging for harbor fleets — whitepaper", type: "PDF", size: "5.4 MB", updated: "2026-05-20" }
+      ],
+      proposals: [],
+      presentations: [],
+      timeline: [
+        { when: "2026-06-21 11:05", who: "Marten Kask", what: "Viewed shore-charging whitepaper (2 min)" },
+        { when: "2026-05-19 14:30", who: "Alex Kjellberg", what: "Invited Baltika Marine team to the hub" }
+      ]
     },
     {
       id: "kowalski",
@@ -130,7 +157,24 @@ window.MINRA = {
       activity30d: [0,1,2,2,3,4,4,6,5,7,8,9],
       accent: "#4a3aa7",
       about: "Fast-growing 3PL with new 60,000 m² facility near Łódź. Greenfield opportunity — full Li-ion fleet from day one.",
-      priceList: [], docs: [], proposals: [], presentations: [], timeline: []
+      priceList: [
+        { sku: "NC-LI4880", name: "NordCell Li-ion 48V / 800Ah pack", list: 11900, hub: 10900, moq: 10 },
+        { sku: "NC-CHG30", name: "SmartCharge 30kW opportunity charger", list: 6400, hub: 5950, moq: 4 },
+        { sku: "NC-BMS-FLEET", name: "FleetView telemetry & BMS license (per unit / yr)", list: 240, hub: 200, moq: 40 }
+      ],
+      docs: [
+        { name: "Greenfield charging layout guide (indoor, PL code 2027)", type: "PDF", size: "3.7 MB", updated: "2026-06-29" },
+        { name: "NC-LI4880 technical datasheet", type: "PDF", size: "2.1 MB", updated: "2026-06-28" }
+      ],
+      proposals: [],
+      presentations: [
+        { name: "Company introduction — Signature", tier: "Signature", url: "presentations/kowalski-intro-signature.html", generated: "2026-07-06", views: 3 }
+      ],
+      timeline: [
+        { when: "2026-07-05 16:12", who: "Agnieszka Nowak", what: "Viewed company introduction deck (full, 4 min)" },
+        { when: "2026-07-02 09:44", who: "Alex Kjellberg", what: "Shared greenfield charging layout guide" },
+        { when: "2026-06-26 13:00", who: "Agnieszka Nowak", what: "Asked in hub: \"Can FleetView export to our WMS?\"" }
+      ]
     },
     {
       id: "lindqvist",
@@ -147,7 +191,23 @@ window.MINRA = {
       activity30d: [4,5,6,5,7,8,9,8,10,9,11,12],
       accent: "#e34948",
       about: "OEM partner integrating NordCell packs into AGV platforms. Frame agreement for 2027 in verbal commit.",
-      priceList: [], docs: [], proposals: [], presentations: [], timeline: []
+      priceList: [
+        { sku: "NC-OEM48", name: "48V OEM battery module (per module, volume tier)", list: 2100, hub: 1680, moq: 100 },
+        { sku: "NC-BMS-OEM", name: "Embedded BMS license (per platform / yr)", list: 190, hub: 150, moq: 100 }
+      ],
+      docs: [
+        { name: "OEM integration handbook (CAN, mechanical, thermal)", type: "PDF", size: "6.1 MB", updated: "2026-06-10" },
+        { name: "Frame agreement 2027 — draft v3", type: "DOCX", size: "290 kB", updated: "2026-07-04" }
+      ],
+      proposals: [
+        { name: "Frame agreement 2027 — 1,200 modules", value: 240000, status: "Verbal commit", sent: "2026-06-12" }
+      ],
+      presentations: [],
+      timeline: [
+        { when: "2026-07-07 08:55", who: "Sara Lindqvist", what: "Commented on frame agreement draft v3: \"Legal OK from our side\"" },
+        { when: "2026-07-04 11:20", who: "Alex Kjellberg", what: "Uploaded frame agreement draft v3" },
+        { when: "2026-06-12 10:00", who: "Alex Kjellberg", what: "Sent proposal: Frame agreement 2027" }
+      ]
     }
   ],
 

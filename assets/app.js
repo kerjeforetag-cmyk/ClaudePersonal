@@ -105,6 +105,44 @@
     </div>`;
   }
 
+  /* ---------- global search ---------- */
+  const searchIndex = [];
+  D.hubs.forEach((h) => {
+    searchIndex.push({ t: "Hub", label: h.company, sub: h.industry + " · " + h.country, hash: "#/hub/" + h.id });
+    h.priceList.forEach((p) => searchIndex.push({ t: "Price", label: p.sku + " — " + p.name, sub: h.company + " · " + fmtEUR(p.hub), hash: "#/hub/" + h.id + "/prices" }));
+    h.docs.forEach((d) => searchIndex.push({ t: "Doc", label: d.name, sub: h.company, hash: "#/hub/" + h.id + "/docs" }));
+  });
+  D.people.forEach((p) => searchIndex.push({ t: "Person", label: p.name, sub: p.role + " · " + p.org, hash: "#/people" }));
+  D.news.forEach((n) => searchIndex.push({ t: "News", label: n.title, sub: n.territory + " · " + n.source, hash: "#/flow" }));
+  D.competitors.forEach((c) => searchIndex.push({ t: "Competitor", label: c.vendor + " — " + c.product, sub: (c.kind === "verified" ? "Verified · " : "Est. OEM · ") + fmtEUR(c.price), hash: "#/pricing" }));
+
+  const sInput = $("#global-search"), sBox = $("#search-results");
+  function goTo(hash) {
+    sBox.hidden = true; sInput.value = "";
+    if (location.hash === hash) render(); else location.hash = hash;
+  }
+  function doSearch() {
+    const q = sInput.value.trim().toLowerCase();
+    if (q.length < 2) { sBox.hidden = true; return; }
+    const hits = searchIndex.filter((e) => (e.label + " " + e.sub).toLowerCase().includes(q)).slice(0, 8);
+    sBox.innerHTML = hits.length
+      ? hits.map((h) => `<button class="sr-item" data-go="${esc(h.hash)}">
+          <span class="badge neutral">${h.t}</span>
+          <span><b>${esc(h.label)}</b><span class="sr-sub">${esc(h.sub)}</span></span></button>`).join("")
+      : `<div class="sr-empty">No matches for “${esc(q)}”.</div>`;
+    sBox.hidden = false;
+  }
+  sInput.addEventListener("input", doSearch);
+  sInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { sBox.hidden = true; sInput.blur(); }
+    if (e.key === "Enter") { const f = sBox.querySelector("[data-go]"); if (f) goTo(f.dataset.go); }
+  });
+  document.addEventListener("click", (e) => {
+    const g = e.target.closest("[data-go]");
+    if (g) { goTo(g.dataset.go); return; }
+    if (!e.target.closest("#search-box")) sBox.hidden = true;
+  });
+
   /* ---------- nav ---------- */
   const NAV = [
     { hash: "#/dashboard", name: "Dashboard", ico: "M3 13h7V3H3v10Zm0 8h7v-6H3v6Zm11 0h7V11h-7v10Zm0-18v6h7V3h-7Z" },
@@ -204,9 +242,12 @@
     </div>`;
   }
 
+  let custView = false, custViewHub = null;
+
   function vHub(id, tab) {
     const h = D.hubs.find((x) => x.id === id);
     if (!h) return `<div class="empty">Hub not found.</div>`;
+    if (custViewHub !== id) { custView = false; custViewHub = id; }
     tab = tab || "overview";
     const tabs = [
       ["overview", "Overview"], ["prices", "Price list"], ["docs", "Technical data"],
@@ -214,12 +255,14 @@
     ];
     let body = "";
     if (tab === "overview") {
-      body = `<div class="grid cols-2">
-        <div class="card"><h3>About this customer</h3><p class="sub" style="margin-top:8px;font-size:13.5px;line-height:1.6">${esc(h.about)}</p></div>
-        <div class="card"><h3>Hub pulse</h3><p class="sub">Customer actions, last 30 days</p>
+      const pulse = custView ? "" : `
+        <div class="card"><h3>Hub pulse <span class="badge neutral">internal</span></h3><p class="sub">Customer actions, last 30 days</p>
           <div style="margin-top:14px">${sparkline(h.activity30d, 380, 56)}</div>
           <div class="hub-meta" style="margin-top:12px">${healthBadge(h.health)}<span class="sub">${h.members} members · last active ${esc(h.lastActivity)}</span></div>
-        </div>
+        </div>`;
+      body = `<div class="grid ${custView ? "" : "cols-2"}">
+        <div class="card"><h3>About ${custView ? "this partnership" : "this customer"}</h3><p class="sub" style="margin-top:8px;font-size:13.5px;line-height:1.6">${esc(h.about)}</p></div>
+        ${pulse}
       </div>`;
     } else if (tab === "prices") {
       body = h.priceList.length ? `<div class="table-wrap"><table class="data">
@@ -258,18 +301,30 @@
         <li><span class="t-when">${esc(t.when)}</span><span><b>${esc(t.who)}</b> — ${esc(t.what)}</span></li>`).join("")}</ul></div>`
         : `<div class="card"><div class="empty">No activity yet.</div></div>`;
     }
-    return `
-    ${helpNote("hub")}
-    <div class="hub-hero ambient">
-      <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
-        <div><h1>${h.flag} ${esc(h.company)}</h1><div class="sub">${esc(h.industry)} · ${esc(h.contact)}, ${esc(h.contactRole)}</div></div>
+    const banner = custView ? `
+      <div class="cust-banner"><span class="badge">Customer preview</span>
+        <span>This is what ${esc(h.contact)}'s team sees. Deal value, stage and pulse analytics are hidden.</span>
+        <span class="grow"></span>
+        <button class="btn sm" style="background:#efede4;color:var(--ink)" data-act="cust-view">Back to internal view</button>
+      </div>` : "";
+    const heroRight = custView ? "" : `
         <div style="text-align:right"><div style="font-size:12px;color:#cdc9ba">Deal value</div>
-        <div style="font-size:28px;font-weight:650">${fmtEUR(h.value)}</div></div>
-      </div>
-      <div class="hub-hero-row">${stageBadge(h.stage)}
+        <div style="font-size:28px;font-weight:650">${fmtEUR(h.value)}</div></div>`;
+    const heroActions = custView
+      ? `<span class="badge brand">Shared with ${h.members} members</span>`
+      : `${stageBadge(h.stage)}
         <button class="btn primary sm" data-act="invite">+ Invite customer</button>
         <a class="btn ghost sm" style="background:transparent;color:#efede4;border-color:#5a574b" href="#/studio">Generate presentation</a>
+        <button class="btn ghost sm" style="background:transparent;color:#efede4;border-color:#5a574b" data-act="cust-view">View as customer</button>`;
+    return `
+    ${custView ? "" : helpNote("hub")}
+    ${banner}
+    <div class="hub-hero ambient">
+      <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
+        <div><h1>${h.flag} ${esc(h.company)}</h1><div class="sub">${custView ? "Partner hub · NordCell Power AB" : esc(h.industry) + " · " + esc(h.contact) + ", " + esc(h.contactRole)}</div></div>
+        ${heroRight}
       </div>
+      <div class="hub-hero-row">${heroActions}</div>
     </div>
     <div class="tabs">${tabs.map(([k, n]) => `<a class="tab ${tab === k ? "on" : ""}" href="#/hub/${h.id}/${k}">${n}</a>`).join("")}</div>
     <div class="view">${body}</div>`;
@@ -286,7 +341,7 @@
 
     <div class="step-head"><div class="step-num">1</div><h3>Who is it for?</h3></div>
     <div class="grid cols-3">
-      ${D.hubs.slice(0, 3).map((h) => `
+      ${D.hubs.slice(0, 4).map((h) => `
       <div class="pick ${s.customer === h.id ? "on" : ""}" data-pick="customer" data-val="${h.id}">
         <b>${h.flag} ${esc(h.company)}</b><p>${esc(h.industry)} — ${esc(h.stage)}</p>
       </div>`).join("")}
@@ -333,8 +388,13 @@
         $("#gen-log").textContent = "minra compose · " + tier.name.toLowerCase() + " · step " + (i + 1) + "/" + steps.length;
         i++; setTimeout(tick, stepT);
       } else {
-        const url = s.tier === "signature" ? "presentations/mueller-signature.html" : "presentations/mueller-essential.html";
-        const note = s.customer === "mueller" ? "" :
+        const DECKS = {
+          mueller: { signature: "presentations/mueller-signature.html", essential: "presentations/mueller-essential.html" },
+          kowalski: { signature: "presentations/kowalski-intro-signature.html" }
+        };
+        const own = DECKS[s.customer] && DECKS[s.customer][s.tier];
+        const url = own || (s.tier === "signature" ? "presentations/mueller-signature.html" : "presentations/mueller-essential.html");
+        const note = own ? "" :
           `<p class="axis-note" style="margin-top:10px">Demo workspace: sample output shown for Müller Fördertechnik.</p>`;
         panel.innerHTML = `
           <div class="deck-result">
@@ -498,6 +558,7 @@
     const act = e.target.closest("[data-act]");
     if (act) {
       const a = act.dataset.act;
+      if (a === "cust-view") { custView = !custView; render(); return; }
       if (a === "invite") toast("Invitation link copied — send it to your customer's team.");
       else if (a === "new-hub") toast("Demo workspace: hub creation is disabled.");
       else if (a === "share-deck") toast("Deck shared to the hub — the customer team was notified.");

@@ -32,6 +32,8 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Competitor pricing** — two confidence classes, never mixed: **Verified** (seen in a real document, with source and date) vs **Estimated OEM** (modeled price where no document exists)
 - **Key persons** — decision makers, influencers and gatekeepers per country, with how they work and where to meet them
 - **Help notes** — every section explains itself with a dismissible note; the `? Help` button brings them back
+- **Global search** — customers, SKUs, documents, people, news and competitor prices from the top bar
+- **View as customer** — one click inside any hub shows exactly what the invited team sees (deal value, stage and pulse analytics hidden)
 
 ## Try it
 
@@ -45,8 +47,9 @@ Or just open `index.html` in a browser. Sign in with any credentials (demo works
 
 Generated presentation examples (what the Studio produces):
 
-- `presentations/mueller-signature.html` — Signature tier, full-bleed scroll deck with live TCO chart
-- `presentations/mueller-essential.html` — Essential tier, clean template document
+- `presentations/mueller-signature.html` — Signature tier, commercial proposal: full-bleed scroll deck with live TCO chart
+- `presentations/mueller-essential.html` — Essential tier, same proposal as a clean template document
+- `presentations/kowalski-intro-signature.html` — Signature tier, company introduction composed for a different customer and objective
 
 ## Structure
 

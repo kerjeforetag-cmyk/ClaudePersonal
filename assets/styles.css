@@ -125,6 +125,34 @@ h1,h2,h3,.display { font-family: var(--serif); font-weight: 600; letter-spacing:
 }
 .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .search input { border: 0; outline: 0; background: none; width: 100%; font-size: 13px; color: var(--ink); }
+.search { position: relative; }
+.search-results {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 60;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: var(--shadow-lift); overflow: hidden; max-height: 380px; overflow-y: auto;
+  animation: viewIn .2s var(--ease) both;
+}
+.sr-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 10px 14px; font-size: 13px; color: var(--ink); border-bottom: 1px solid var(--line-soft);
+  transition: background .15s;
+}
+.sr-item:last-child { border-bottom: 0; }
+.sr-item:hover, .sr-item.sel { background: var(--card-2); }
+.sr-item .badge { flex: none; }
+.sr-item b { font-weight: 600; }
+.sr-item .sr-sub { color: var(--ink-3); font-size: 12px; display: block; }
+.sr-empty { padding: 14px; font-size: 13px; color: var(--ink-3); text-align: center; }
+
+/* customer preview mode */
+.cust-banner {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--night); color: #efede4; border-radius: var(--radius);
+  padding: 12px 18px; margin-bottom: 16px; font-size: 13.5px;
+  animation: viewIn .4s var(--ease) both;
+}
+.cust-banner .badge { background: var(--accent); color: #fff; }
+.cust-banner .grow { flex: 1; }
 
 .content { padding: 28px; max-width: 1240px; width: 100%; margin: 0 auto; }
 
