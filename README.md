@@ -55,6 +55,9 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Landing page** — `landing.html`: the public face (product, studio showcase, pricing, FAQ) linking into the app and the example decks
 - **Account & admin** — editable display name (live everywhere), 2FA toggle, sign out; team management with invites, role changes and removal, all persisted
 - **Objective-aware decks** — generated presentations now carry a middle act per objective (rollout plan / product trio / phase-one results from real hub history / compliance evidence) and wear the workspace accent color
+- **Dark mode** — full token-level theming (app + landing): follows the system by default, with a topbar toggle and a System/Light/Dark picker in Settings; chart palettes re-validated against the dark surface; accents carry light and dark variants
+- **Decks live in hubs** — "Share to hub" saves the generated deck into that hub's Presentations tab (persisted, capped at five stored decks per hub) where it reopens in the built-in viewer
+- **Workspace backup** — export the whole working dataset + branding as JSON from Settings, and import it on any machine
 
 ## Try it
 

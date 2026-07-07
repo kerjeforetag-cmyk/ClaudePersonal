@@ -42,6 +42,7 @@
       <div class="search" id="search-box">⌕ <input id="global-search" placeholder="Search customers, prices, people…  Ctrl+K" autocomplete="off" />
         <div class="search-results" id="search-results" hidden></div>
       </div>
+      <button class="btn ghost sm" id="theme-btn" title="Toggle theme">🌙</button>
       <div style="position:relative" id="notif-wrap">
         <button class="btn ghost sm" id="notif-btn" title="Notifications">🔔<span class="notif-dot" id="notif-dot" hidden></span></button>
         <div class="notif-panel" id="notif-panel" hidden></div>
@@ -67,6 +68,7 @@
 <div class="modal-wrap" id="modal-wrap" hidden>
   <div class="modal" id="modal"></div>
 </div>
+<input type="file" id="import-file" accept="application/json,.json" hidden />
 
 <script src="assets/data.js"></script>
 <script src="assets/generator.js"></script>

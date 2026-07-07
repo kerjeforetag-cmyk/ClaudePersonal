@@ -14,7 +14,23 @@
     --serif: "Charter", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --ease: cubic-bezier(.22,.8,.3,1);
+    --amb-op: .5;
+    color-scheme: light;
   }
+  /* dark theme — token overrides only */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #161512; --card: #201f1b; --ink: #f0eee4; --ink-2: #bcb9ad; --ink-3: #8a8779;
+      --line: #363329; --accent-soft: #3a2419; --accent-ink: #e8a284; --amb-op: .32;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #161512; --card: #201f1b; --ink: #f0eee4; --ink-2: #bcb9ad; --ink-3: #8a8779;
+    --line: #363329; --accent-soft: #3a2419; --accent-ink: #e8a284; --amb-op: .32;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body { font-family: var(--sans); background: var(--paper); color: var(--ink); line-height: 1.6; font-size: 16px; -webkit-font-smoothing: antialiased; }
@@ -26,7 +42,7 @@
   /* nav */
   .nav {
     position: sticky; top: 0; z-index: 50;
-    background: color-mix(in srgb, var(--paper) 86%, #fff);
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
     backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
   }
   .nav-in { display: flex; align-items: center; gap: 28px; padding: 14px 24px; max-width: 1140px; margin: 0 auto; }
@@ -49,7 +65,7 @@
 
   /* ambient */
   .amb { position: relative; overflow: hidden; }
-  .amb::before, .amb::after { content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; pointer-events: none; z-index: 0; }
+  .amb::before, .amb::after { content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: var(--amb-op, .5); pointer-events: none; z-index: 0; }
   .amb::before { width: 640px; height: 640px; top: -260px; right: -160px;
     background: radial-gradient(circle at 40% 40%, #e9b18f, #d97757 55%, transparent 75%);
     animation: d1 32s var(--ease) infinite alternate; }

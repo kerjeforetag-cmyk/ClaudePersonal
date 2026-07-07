@@ -58,20 +58,46 @@
     store.set("minra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members }));
   }
 
+  // each accent carries light + dark variants; CSS resolves via --acc-* indirection
   const ACCENTS = {
-    terracotta: { accent: "#c96442", strong: "#b4552f", soft: "#f4e3da", ink: "#7c3a1e" },
-    forest: { accent: "#4a7c59", strong: "#3b6647", soft: "#e0eee4", ink: "#2d5238" },
-    indigo: { accent: "#4a5ec4", strong: "#3b4cae", soft: "#e3e6f7", ink: "#2e3a80" },
-    plum: { accent: "#8a4a7c", strong: "#713a65", soft: "#f0e0ec", ink: "#5a2d50" }
+    terracotta: { accent: "#c96442", strong: "#b4552f", softL: "#f4e3da", softD: "#3a2419", inkL: "#7c3a1e", inkD: "#e8a284" },
+    forest: { accent: "#4a7c59", strong: "#3b6647", softL: "#e0eee4", softD: "#1f2e23", inkL: "#2d5238", inkD: "#a8cbb0" },
+    indigo: { accent: "#4a5ec4", strong: "#3b4cae", softL: "#e3e6f7", softD: "#232849", inkL: "#2e3a80", inkD: "#aab6ef" },
+    plum: { accent: "#8a4a7c", strong: "#713a65", softL: "#f0e0ec", softD: "#33202f", inkL: "#5a2d50", inkD: "#d8a8cc" }
   };
   function applyAccent(key) {
     const a = ACCENTS[key] || ACCENTS.terracotta;
     const r = document.documentElement.style;
-    r.setProperty("--accent", a.accent); r.setProperty("--accent-strong", a.strong);
-    r.setProperty("--accent-soft", a.soft); r.setProperty("--accent-ink", a.ink);
+    r.setProperty("--acc", a.accent); r.setProperty("--acc-strong", a.strong);
+    r.setProperty("--acc-soft-l", a.softL); r.setProperty("--acc-soft-d", a.softD);
+    r.setProperty("--acc-ink-l", a.inkL); r.setProperty("--acc-ink-d", a.inkD);
     store.set("minra.accent", key);
   }
   applyAccent(store.get("minra.accent") || "terracotta");
+
+  /* ---------- theme (system / light / dark) ---------- */
+  function isDark() {
+    const t = document.documentElement.dataset.theme;
+    if (t) return t === "dark";
+    try { return matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) { return false; }
+  }
+  function applyTheme(pref) {
+    if (pref === "light" || pref === "dark") {
+      document.documentElement.dataset.theme = pref;
+      store.set("minra.theme", pref);
+    } else {
+      delete document.documentElement.dataset.theme;
+      store.del("minra.theme");
+    }
+    const tb = $("#theme-btn");
+    if (tb) { tb.textContent = isDark() ? "☀️" : "🌙"; tb.title = isDark() ? "Switch to light" : "Switch to dark"; }
+  }
+  applyTheme(store.get("minra.theme") || "");
+  try {
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (!document.documentElement.dataset.theme) { applyTheme(""); render(); }
+    });
+  } catch (e) { /* older engines */ }
 
   // ?customer=<hubId> turns this session into the shared customer view of one hub
   const lockedCustomer = (() => {
@@ -108,7 +134,7 @@
   // sparkline: single series — de-emphasized line, accent end-dot (stat-tile spec)
   function sparkline(points, w, h, opts) {
     w = w || 150; h = h || 36; opts = opts || {};
-    const line = opts.line || "#c3c2b7";
+    const line = opts.line || "var(--spark)";
     const dot = opts.dot || "var(--s1)";
     const min = Math.min(...points), max = Math.max(...points);
     const span = (max - min) || 1;
@@ -136,9 +162,10 @@
   }
 
   // 14-day travel strip — sequential ramp by score, best days flagged
-  // ordinal ramp: sequential blue, 5 validated steps (monotone L, ≥0.06 gaps, light end ≥2:1)
-  const seqRamp = ["#86b6ef", "#3987e5", "#256abf", "#184f95", "#0d366b"];
-  const seqFor = (score) => seqRamp[Math.min(4, Math.floor(score / 100 * 4.99))];
+  // ordinal ramps: sequential blue, 5 validated steps per theme (validator: light & dark surfaces)
+  const seqRampLight = ["#86b6ef", "#3987e5", "#256abf", "#184f95", "#0d366b"];
+  const seqRampDark = ["#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"];
+  const seqFor = (score) => (isDark() ? seqRampDark : seqRampLight)[Math.min(4, Math.floor(score / 100 * 4.99))];
   function dayStrip(days) {
     const best = Math.max(...days.map((d) => d.s));
     return `<div class="day-strip">` + days.map((d) => `
@@ -706,12 +733,14 @@
           <div class="reason" style="margin-top:10px"><span><b>“${esc(top[0])}” holds ${Math.round(top[1] / total * 100)}% of viewing time.</b> That's the conversation your customer wants to have — open with it.</span></div>
         </div>`;
       }
-      body = h.presentations.length ? `<div class="grid cols-2">${h.presentations.map((p) => `
+      body = h.presentations.length ? `<div class="grid cols-2">${h.presentations.map((p, i) => `
         <div class="card deck-result hover">
           <div class="deck-thumb ${p.tier === "Essential" ? "light" : ""}">${esc(p.tier)}</div>
           <div style="flex:1"><b style="font-size:14px">${esc(p.name)}</b>
             <span class="src" style="display:block">Generated ${esc(p.generated)} · ${p.views} customer views</span>
-            <a class="btn dark sm" style="margin-top:8px" href="${esc(p.url)}" target="_blank" rel="noopener">Open deck ↗</a>
+            ${p.url
+              ? `<a class="btn dark sm" style="margin-top:8px" href="${esc(p.url)}" target="_blank" rel="noopener">Open deck ↗</a>`
+              : `<button class="btn dark sm" style="margin-top:8px" data-act="open-saved" data-i="${i}">Open deck</button>`}
           </div></div>`).join("")}</div>${engagement}`
         : `<div class="card"><div class="empty">No presentations yet.<br><br><button class="btn primary sm" data-act="gen-for" data-hub="${h.id}">Generate one →</button></div></div>`;
     } else if (tab === "activity") {
@@ -1083,6 +1112,11 @@
         <div class="swatch-row">
           ${Object.entries(ACCENTS).map(([k, a]) => `<button class="swatch ${k === accentKey ? "on" : ""}" data-accent="${k}" style="background:${a.accent}" title="${k}" aria-label="${k}"></button>`).join("")}
         </div>
+        <label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-top:18px">Theme</label>
+        <div class="chips" style="margin-top:8px">
+          ${[["", "System"], ["light", "Light"], ["dark", "Dark"]].map(([v, l]) =>
+            `<button class="chip ${(store.get("minra.theme") || "") === v ? "on" : ""}" data-theme-pick="${v}">${l}</button>`).join("")}
+        </div>
       </div>
       <div class="card">
         <h3>Plan &amp; billing</h3><p class="sub">Studio plan · billed monthly · cancel anytime</p>
@@ -1135,8 +1169,12 @@
       </div>
     </div>
     <div class="card" style="margin-top:16px">
-      <h3>Demo data</h3><p class="sub">Reset hubs you created, help notes and branding back to demo defaults.</p>
-      <button class="btn ghost sm" data-act="reset-demo" style="margin-top:10px;color:var(--critical)">Reset demo data</button>
+      <h3>Workspace data</h3><p class="sub">Your working data lives in this browser. Export it as JSON to back up or move machines; import restores everything including branding.</p>
+      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn ghost sm" data-act="export-data">Export workspace (.json)</button>
+        <button class="btn ghost sm" data-act="import-data">Import workspace</button>
+        <button class="btn ghost sm" data-act="reset-demo" style="color:var(--critical)">Reset demo data</button>
+      </div>
     </div>`;
   }
 
@@ -1211,6 +1249,9 @@
     const sw = e.target.closest("[data-accent]");
     if (sw) { applyAccent(sw.dataset.accent); render(); toast("Accent updated across the workspace."); return; }
 
+    const tp = e.target.closest("[data-theme-pick]");
+    if (tp) { applyTheme(tp.dataset.themePick); render(); toast(tp.dataset.themePick ? tp.dataset.themePick[0].toUpperCase() + tp.dataset.themePick.slice(1) + " theme on." : "Following your system theme."); return; }
+
     const tfa = e.target.closest("[data-2fa]");
     if (tfa) {
       const on = store.get("minra.2fa") === "on";
@@ -1246,7 +1287,7 @@
         return;
       }
       if (a === "reset-demo") {
-        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen", "minra.toured", "minra.username", "minra.2fa"].forEach((k) => store.del(k));
+        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen", "minra.toured", "minra.username", "minra.2fa", "minra.theme"].forEach((k) => store.del(k));
         Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
         ["crm", "erp", "wms", "cal"].forEach((k) => store.del("minra.int." + k));
         toast("Demo data reset.");
@@ -1314,8 +1355,43 @@
       }
       if (a.startsWith("save-")) { saveForms(a); return; }
 
-      if (a === "share-deck") toast("Deck shared to the hub — the customer team was notified.");
-      else toast("This is a demo action.");
+      if (a === "share-deck") {
+        if (!lastDeck) { toast("Generate a deck first."); return; }
+        const hub = D.hubs.find((h) => h.id === studioState.customer);
+        if (!hub) return;
+        const saved = {
+          name: lastDeck.title.split(" — ")[1] || lastDeck.title,
+          tier: lastDeck.title.includes("Signature") ? "Signature" : "Essential",
+          generated: today(), views: 0, html: lastDeck.html
+        };
+        hub.presentations.push(saved);
+        const withHtml = hub.presentations.filter((p) => p.html);
+        while (withHtml.length > 5) {
+          const oldest = withHtml.shift();
+          hub.presentations.splice(hub.presentations.indexOf(oldest), 1);
+        }
+        hub.timeline.unshift({ when: nowStamp(), who: D.tenant.user.name, what: "Shared deck to hub: " + saved.name });
+        persist(); refreshNotifDot();
+        toast("Deck saved to " + hub.company + "'s hub — the team was notified.");
+        return;
+      }
+      if (a === "open-saved") {
+        const h = hubFromRoute();
+        const p = h && h.presentations[+act.dataset.i];
+        if (p && p.html) { lastDeck = { html: p.html, title: p.name }; openDeckOverlay(); }
+        return;
+      }
+      if (a === "export-data") {
+        const payload = {
+          version: 1, exported: new Date().toISOString(),
+          data: { hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members },
+          branding: { accent: store.get("minra.accent"), wsname: store.get("minra.wsname"), theme: store.get("minra.theme"), username: store.get("minra.username") }
+        };
+        if (downloadFile("minra-workspace-" + today() + ".json", JSON.stringify(payload, null, 2), "application/json")) toast("Workspace exported as JSON.");
+        return;
+      }
+      if (a === "import-data") { $("#import-file").click(); return; }
+      toast("This is a demo action.");
       return;
     }
   });
@@ -1364,6 +1440,8 @@
     if (e.key === "Escape") {
       if (!deckOverlay.hidden) { deckOverlay.hidden = true; deckFrame.srcdoc = ""; }
       else if (!modalWrap.hidden) closeModal();
+      else if (!notifPanel.hidden) notifPanel.hidden = true;
+      else if (!sBox.hidden) sBox.hidden = true;
     }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
@@ -1377,6 +1455,27 @@
     toast("Help notes restored on every page.");
   });
   $("#menu-btn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  $("#theme-btn").addEventListener("click", () => { applyTheme(isDark() ? "light" : "dark"); render(); });
+  $("#import-file").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const payload = JSON.parse(rd.result);
+        if (!payload || !payload.data || !Array.isArray(payload.data.hubs)) throw new Error("shape");
+        store.set("minra.data.v1", JSON.stringify(payload.data));
+        const b = payload.branding || {};
+        ["accent", "wsname", "theme", "username"].forEach((k) => {
+          if (b[k]) store.set("minra." + k, b[k]); else store.del("minra." + k);
+        });
+        toast("Workspace imported — reloading.");
+        setTimeout(() => location.reload(), 700);
+      } catch (err) { toast("That file isn't a Minra workspace export."); }
+    };
+    rd.readAsText(f);
+    e.target.value = "";
+  });
 
   /* ---------- first-run tour ---------- */
   function maybeTour() {
