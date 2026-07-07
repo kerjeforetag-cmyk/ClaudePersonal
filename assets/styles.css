@@ -542,6 +542,18 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .int-row .src { display: block; }
 .int-row .grow { flex: 1; }
 
+/* ---------- inline table actions ---------- */
+.icon-btn { padding: 2px 8px; border-radius: 7px; color: var(--ink-3); font-size: 14px; line-height: 1.4; }
+.icon-btn:hover { background: var(--card-2); color: var(--ink); }
+
+/* ---------- customer-link mode ---------- */
+.customer-mode .sidebar { display: none; }
+.customer-mode .app { grid-template-columns: 1fr; }
+.customer-mode #search-box,
+.customer-mode #help-toggle,
+.customer-mode #notif-wrap,
+.customer-mode .menu-btn { display: none !important; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1080px) {
   .cols-4 { grid-template-columns: repeat(2, 1fr); }

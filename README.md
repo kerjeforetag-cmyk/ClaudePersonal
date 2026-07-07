@@ -39,6 +39,10 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Notifications** — a bell aggregating customer activity across every hub
 - **Settings** — workspace branding (name + four accent themes applied live), the simple pricing model (€49/mo base, Essential included, Signature €29/deck), team roles, integrations, demo reset
 - **Calendar export** — "Plan this trip" downloads an .ics with the suggested meetings
+- **Fully editable, fully persistent** — add/edit/remove price-list rows, share documents, create proposals, log activity, add key persons and competitor prices; every change persists in localStorage (reset from Settings)
+- **Proposals module** — every offer across every hub in one table, with open and accepted totals
+- **Customer invite links** — "Invite customer" produces a `?customer=<hub>` link that opens the hub in a locked customer-only mode: no sidebar, no internal data, "powered by minra"
+- **Territory summary** — Market Flow leads with where you sell: hubs, open value and news per territory
 
 ## Try it
 

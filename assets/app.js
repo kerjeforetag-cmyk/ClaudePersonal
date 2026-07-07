@@ -38,10 +38,21 @@
     toast._t = setTimeout(() => t.classList.remove("show"), 2600);
   }
 
-  /* ---------- persistence: custom hubs & branding ---------- */
-  const customHubs = (() => { try { return JSON.parse(store.get("minra.hubs.custom") || "[]"); } catch (e) { return []; } })();
-  customHubs.forEach((h) => { if (!D.hubs.some((x) => x.id === h.id)) D.hubs.push(h); });
-  function persistHubs() { store.set("minra.hubs.custom", JSON.stringify(customHubs)); }
+  /* ---------- persistence: full working dataset ---------- */
+  (() => {
+    // migrate pre-v4 custom hubs, then load the working dataset if one exists
+    try {
+      const legacy = JSON.parse(store.get("minra.hubs.custom") || "[]");
+      legacy.forEach((h) => { if (!D.hubs.some((x) => x.id === h.id)) D.hubs.push(h); });
+    } catch (e) { /* ignore */ }
+    try {
+      const saved = JSON.parse(store.get("minra.data.v1") || "null");
+      if (saved) ["hubs", "people", "competitors"].forEach((k) => { if (Array.isArray(saved[k])) D[k] = saved[k]; });
+    } catch (e) { /* ignore */ }
+  })();
+  function persist() {
+    store.set("minra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors }));
+  }
 
   const ACCENTS = {
     terracotta: { accent: "#c96442", strong: "#b4552f", soft: "#f4e3da", ink: "#7c3a1e" },
@@ -57,6 +68,11 @@
     store.set("minra.accent", key);
   }
   applyAccent(store.get("minra.accent") || "terracotta");
+
+  // ?customer=<hubId> turns this session into the shared customer view of one hub
+  const lockedCustomer = (() => {
+    try { return new URLSearchParams(location.search).get("customer"); } catch (e) { return null; }
+  })();
 
   const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   function downloadFile(name, content, type) {
@@ -139,7 +155,8 @@
     travel: ["Why these days?", "Minra scores every day by customer availability, trade fairs and tenders nearby, flight-price index and weather — then recommends the window where one trip does the most work."],
     pricing: ["Verified vs estimated", "A Verified price was actually seen — a tender award, a distributor list, a quote a customer shared. An Estimated OEM price is our model of what the competitor charges OEMs when no document exists. Never mix them up in a negotiation."],
     people: ["Know who matters before you land", "The people who decide, influence or block your deals — per country, with how they work and where to meet them. Add your own notes after every meeting."],
-    settings: ["Make it yours", "Branding flows into every hub and generated deck. The plan is simple on purpose: one monthly price, Essential decks included, Signature decks pay-as-you-go — no seats, no tiers."]
+    settings: ["Make it yours", "Branding flows into every hub and generated deck. The plan is simple on purpose: one monthly price, Essential decks included, Signature decks pay-as-you-go — no seats, no tiers."],
+    proposals: ["One pipeline, many hubs", "Every offer from every hub in one table — open value, accepted value, and where each deal stands. Create proposals here or inside a hub; both land in the same place."]
   };
   function helpNote(key) {
     if (store.get("minra.hn." + key) === "off") return "";
@@ -265,9 +282,105 @@
       priceList: [], docs: [], proposals: [], presentations: [],
       timeline: [{ when: today + " " + now.toTimeString().slice(0, 5), who: D.tenant.user.name, what: "Created this hub" }]
     };
-    D.hubs.push(hub); customHubs.push(hub); persistHubs(); buildSearchIndex(); refreshNotifDot();
+    D.hubs.push(hub); persist(); buildSearchIndex(); refreshNotifDot();
     closeModal(); toast("Hub created — invite the customer when you're ready.");
     location.hash = "#/hub/" + id;
+  }
+
+  /* ---------- generic form modal ---------- */
+  const today = () => new Date().toISOString().slice(0, 10);
+  const nowStamp = () => today() + " " + new Date().toTimeString().slice(0, 5);
+  function formModal(title, sub, fields, saveAct, saveLabel) {
+    openModal(`
+      <h3>${esc(title)}</h3><p class="sub">${esc(sub)}</p>
+      ${fields.map((f) => `<div class="field"><label>${esc(f.label)}</label>${
+        f.type === "select"
+          ? `<select id="${f.id}">${f.options.map((o) => `<option ${o === f.value ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`
+          : `<input id="${f.id}" type="${f.type || "text"}" value="${esc(f.value || "")}" placeholder="${esc(f.placeholder || "")}" />`
+      }</div>`).join("")}
+      <div class="modal-actions">
+        <button class="btn ghost sm" data-act="modal-close">Cancel</button>
+        <button class="btn primary sm" data-act="${saveAct}">${esc(saveLabel || "Save")}</button>
+      </div>`);
+    const first = modalEl.querySelector("input, select");
+    if (first) first.focus();
+  }
+  const fval = (id) => { const el = $("#" + id); return el ? el.value.trim() : ""; };
+  const hubFromRoute = () => {
+    const parts = (location.hash || "").replace(/^#\//, "").split("/");
+    return parts[0] === "hub" ? D.hubs.find((x) => x.id === parts[1]) : null;
+  };
+  let editIndex = -1;
+
+  const FORMS = {
+    price: (p) => formModal(p ? "Edit product" : "Add product", "Customer-specific pricing for this hub.", [
+      { id: "f-sku", label: "SKU", value: p && p.sku, placeholder: "NC-XXXX" },
+      { id: "f-name", label: "Product name", value: p && p.name },
+      { id: "f-list", label: "List price (€)", type: "number", value: p && p.list },
+      { id: "f-hub", label: "Hub price (€)", type: "number", value: p && p.hub },
+      { id: "f-moq", label: "MOQ", type: "number", value: p && p.moq }
+    ], "save-price", p ? "Save changes" : "Add product"),
+    doc: () => formModal("Share document", "Visible to everyone in this hub.", [
+      { id: "f-name", label: "Document name", placeholder: "e.g. Technical datasheet" },
+      { id: "f-type", label: "Type", type: "select", options: ["PDF", "DOCX", "XLSX", "ZIP", "HTML"] },
+      { id: "f-size", label: "Size", placeholder: "e.g. 1.2 MB", value: "—" }
+    ], "save-doc", "Share document"),
+    proposal: (withHub) => formModal("New proposal", "Tracked in the hub and in Proposals.", [
+      ...(withHub ? [{ id: "f-hub-id", label: "Customer hub", type: "select", options: D.hubs.map((h) => h.company) }] : []),
+      { id: "f-name", label: "Proposal name", placeholder: "e.g. Phase 2 — full fleet" },
+      { id: "f-value", label: "Value (€)", type: "number" },
+      { id: "f-status", label: "Status", type: "select", options: ["Draft", "Awaiting customer", "In negotiation", "Accepted", "Declined"] }
+    ], "save-proposal", "Create proposal"),
+    note: () => formModal("Log activity", "Added to this hub's shared timeline.", [
+      { id: "f-what", label: "What happened?", placeholder: "e.g. Call with Jürgen — asked for updated lead times" }
+    ], "save-note", "Log it"),
+    person: () => formModal("Add key person", "Someone who decides, influences or blocks deals.", [
+      { id: "f-name", label: "Name" },
+      { id: "f-role", label: "Role", placeholder: "e.g. Head of Procurement" },
+      { id: "f-org", label: "Organization" },
+      { id: "f-country", label: "Country", type: "select", options: Object.keys(FLAGS) },
+      { id: "f-note", label: "Notes", placeholder: "How they work, what they care about" },
+      { id: "f-meet", label: "Where to meet", placeholder: "e.g. LogiMAT, Stuttgart" }
+    ], "save-person", "Add person"),
+    comp: () => formModal("Add competitor price", "Verified = seen in a real document. Estimated = your model.", [
+      { id: "f-vendor", label: "Competitor" },
+      { id: "f-product", label: "Product" },
+      { id: "f-comp", label: "Comparable to (your SKU)", placeholder: "e.g. NC-LI4880" },
+      { id: "f-price", label: "Price (€)", type: "number" },
+      { id: "f-kind", label: "Confidence", type: "select", options: ["verified", "estimated"] },
+      { id: "f-source", label: "Source", placeholder: "e.g. Public tender award, Hamburg 2026" }
+    ], "save-comp", "Add price")
+  };
+
+  function saveForms(a) {
+    const h = hubFromRoute();
+    if (a === "save-price") {
+      if (!h) return;
+      const row = { sku: fval("f-sku") || "SKU", name: fval("f-name") || "Product", list: +fval("f-list") || 0, hub: +fval("f-hub") || 0, moq: +fval("f-moq") || 1 };
+      if (editIndex >= 0) h.priceList[editIndex] = row; else h.priceList.push(row);
+      h.timeline.unshift({ when: nowStamp(), who: D.tenant.user.name, what: (editIndex >= 0 ? "Updated" : "Published") + " price: " + row.sku });
+    } else if (a === "save-doc") {
+      if (!h) return;
+      h.docs.push({ name: fval("f-name") || "Document", type: $("#f-type").value, size: fval("f-size") || "—", updated: today() });
+      h.timeline.unshift({ when: nowStamp(), who: D.tenant.user.name, what: "Shared document: " + (fval("f-name") || "Document") });
+    } else if (a === "save-proposal") {
+      const target = $("#f-hub-id") ? D.hubs.find((x) => x.company === $("#f-hub-id").value) : h;
+      if (!target) return;
+      target.proposals.push({ name: fval("f-name") || "Proposal", value: +fval("f-value") || 0, status: $("#f-status").value, sent: today() });
+      target.timeline.unshift({ when: nowStamp(), who: D.tenant.user.name, what: "Created proposal: " + (fval("f-name") || "Proposal") });
+    } else if (a === "save-note") {
+      if (!h || !fval("f-what")) return;
+      h.timeline.unshift({ when: nowStamp(), who: D.tenant.user.name, what: fval("f-what") });
+      h.lastActivity = today();
+    } else if (a === "save-person") {
+      const c = $("#f-country").value;
+      D.people.push({ country: c, flag: FLAGS[c] || "🏳️", name: fval("f-name") || "—", role: fval("f-role"), org: fval("f-org"), note: fval("f-note"), meet: fval("f-meet") || "—" });
+    } else if (a === "save-comp") {
+      D.competitors.push({ vendor: fval("f-vendor") || "—", product: fval("f-product") || "—", comparableTo: fval("f-comp") || "—", price: +fval("f-price") || 0, kind: $("#f-kind").value, source: fval("f-source") || "—", checked: today() });
+    }
+    editIndex = -1;
+    persist(); buildSearchIndex(); refreshNotifDot(); closeModal(); render();
+    toast("Saved.");
   }
 
   /* ---------- deck overlay ---------- */
@@ -302,6 +415,7 @@
   const NAV = [
     { hash: "#/dashboard", name: "Dashboard", ico: "M3 13h7V3H3v10Zm0 8h7v-6H3v6Zm11 0h7V11h-7v10Zm0-18v6h7V3h-7Z" },
     { hash: "#/hubs", name: "Customer hubs", ico: "M12 3 2 9l10 6 10-6-10-6Zm-6 9.5V17l6 3.5 6-3.5v-4.5" },
+    { hash: "#/proposals", name: "Proposals", ico: "M6 2h9l5 5v15H6Z M14 2v6h6 M9 13h6 M9 17h4" },
     { hash: "#/studio", name: "Presentation studio", ico: "M4 4h16v11H4z M8 20l4-3 4 3" },
     { hash: "#/flow", name: "Market flow", ico: "M3 12h4l2-6 4 12 2-6h6" },
     { hash: "#/travel", name: "Travel planner", ico: "M2 16l20-6-8 4-2 6-2-4-8 0Z" },
@@ -404,6 +518,7 @@
     const h = D.hubs.find((x) => x.id === id);
     if (!h) return `<div class="empty">Hub not found.</div>`;
     if (custViewHub !== id) { custView = false; custViewHub = id; }
+    if (lockedCustomer === id) custView = true;
     tab = tab || "overview";
     const tabs = [
       ["overview", "Overview"], ["prices", "Price list"], ["docs", "Technical data"],
@@ -421,28 +536,32 @@
         ${pulse}
       </div>`;
     } else if (tab === "prices") {
-      body = h.priceList.length ? `<div class="table-wrap"><table class="data">
-        <thead><tr><th>SKU</th><th>Product</th><th class="num">List price</th><th class="num">Your hub price</th><th class="num">MOQ</th></tr></thead>
-        <tbody>${h.priceList.map((p) => `<tr>
+      const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-price">+ Add product</button></div>`;
+      body = h.priceList.length ? `${addBtn}<div class="table-wrap"><table class="data">
+        <thead><tr><th>SKU</th><th>Product</th><th class="num">List price</th><th class="num">Your hub price</th><th class="num">MOQ</th>${custView ? "" : "<th></th>"}</tr></thead>
+        <tbody>${h.priceList.map((p, i) => `<tr>
           <td style="font-family:var(--mono);font-size:12px">${esc(p.sku)}</td><td>${esc(p.name)}</td>
           <td class="num" style="color:var(--ink-3);text-decoration:line-through">${fmtEUR(p.list)}</td>
-          <td class="num"><b>${fmtEUR(p.hub)}</b></td><td class="num">${p.moq}</td></tr>`).join("")}
+          <td class="num"><b>${fmtEUR(p.hub)}</b></td><td class="num">${p.moq}</td>
+          ${custView ? "" : `<td class="num" style="white-space:nowrap"><button class="icon-btn" data-act="edit-price" data-i="${i}" title="Edit">✎</button><button class="icon-btn" data-act="del-price" data-i="${i}" title="Remove">×</button></td>`}</tr>`).join("")}
         </tbody></table></div>
         <p class="axis-note" style="margin-top:10px">Hub prices are customer-specific and visible to invited members only. Valid Q3 2026.</p>`
-        : `<div class="card"><div class="empty">No customer-specific price list yet. <br><br><button class="btn primary sm" data-act="demo">Publish price list</button></div></div>`;
+        : `<div class="card"><div class="empty">No customer-specific price list yet.${custView ? "" : `<br><br><button class="btn primary sm" data-act="add-price">Publish price list</button>`}</div></div>`;
     } else if (tab === "docs") {
-      body = h.docs.length ? `<div class="card">${h.docs.map((d) => `
+      const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-doc">+ Share document</button></div>`;
+      body = h.docs.length ? `${addBtn}<div class="card">${h.docs.map((d, i) => `
         <div class="doc-row"><div class="doc-ico">${esc(d.type)}</div>
         <div style="flex:1"><b>${esc(d.name)}</b><span class="src">Updated ${esc(d.updated)} · ${esc(d.size)}</span></div>
-        <button class="btn ghost sm" data-act="demo">Share</button></div>`).join("")}</div>`
-        : `<div class="card"><div class="empty">No documents shared yet.</div></div>`;
+        ${custView ? `<button class="btn ghost sm" data-act="demo">Download</button>` : `<button class="icon-btn" data-act="del-doc" data-i="${i}" title="Remove">×</button>`}</div>`).join("")}</div>`
+        : `<div class="card"><div class="empty">No documents shared yet.${custView ? "" : `<br><br><button class="btn primary sm" data-act="add-doc">+ Share document</button>`}</div></div>`;
     } else if (tab === "proposals") {
-      body = h.proposals.length ? `<div class="table-wrap"><table class="data">
+      const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-proposal">+ New proposal</button></div>`;
+      body = h.proposals.length ? `${addBtn}<div class="table-wrap"><table class="data">
         <thead><tr><th>Proposal</th><th class="num">Value</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${h.proposals.map((p) => `<tr><td><b>${esc(p.name)}</b></td><td class="num">${fmtEUR(p.value)}</td>
-        <td><span class="badge ${p.status === "Accepted" ? "good" : "warn"}">${esc(p.status)}</span></td><td>${esc(p.sent)}</td></tr>`).join("")}
+        <td><span class="badge ${p.status === "Accepted" ? "good" : p.status === "Declined" ? "crit" : "warn"}">${esc(p.status)}</span></td><td>${esc(p.sent)}</td></tr>`).join("")}
         </tbody></table></div>`
-        : `<div class="card"><div class="empty">No proposals yet — generate one in the studio.</div></div>`;
+        : `<div class="card"><div class="empty">No proposals yet.${custView ? "" : `<br><br><button class="btn primary sm" data-act="add-proposal">+ New proposal</button>`}</div></div>`;
     } else if (tab === "decks") {
       body = h.presentations.length ? `<div class="grid cols-2">${h.presentations.map((p) => `
         <div class="card deck-result hover">
@@ -453,11 +572,12 @@
           </div></div>`).join("")}</div>`
         : `<div class="card"><div class="empty">No presentations yet.<br><br><button class="btn primary sm" data-act="gen-for" data-hub="${h.id}">Generate one →</button></div></div>`;
     } else if (tab === "activity") {
-      body = h.timeline.length ? `<div class="card"><ul class="timeline">${h.timeline.map((t) => `
+      const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-note">+ Log activity</button></div>`;
+      body = h.timeline.length ? `${addBtn}<div class="card"><ul class="timeline">${h.timeline.map((t) => `
         <li><span class="t-when">${esc(t.when)}</span><span><b>${esc(t.who)}</b> — ${esc(t.what)}</span></li>`).join("")}</ul></div>`
-        : `<div class="card"><div class="empty">No activity yet.</div></div>`;
+        : `<div class="card"><div class="empty">No activity yet.${custView ? "" : `<br><br><button class="btn primary sm" data-act="add-note">+ Log activity</button>`}</div></div>`;
     }
-    const banner = custView ? `
+    const banner = custView && !lockedCustomer ? `
       <div class="cust-banner"><span class="badge">Customer preview</span>
         <span>This is what ${esc(h.contact)}'s team sees. Deal value, stage and pulse analytics are hidden.</span>
         <span class="grow"></span>
@@ -577,12 +697,30 @@
 
   /* ---------- flow ---------- */
   let flowFilter = "All";
+  const TERRITORY_COUNTRIES = {
+    Nordics: ["Sweden", "Norway", "Denmark", "Finland"],
+    DACH: ["Germany", "Austria", "Switzerland"],
+    Baltics: ["Estonia", "Latvia", "Lithuania"],
+    Poland: ["Poland"]
+  };
   function vFlow() {
     const terrs = ["All", ...D.tenant.territories];
     const items = D.news.filter((n) => flowFilter === "All" || n.territory === flowFilter);
+    const terrCards = D.tenant.territories.map((t, i) => {
+      const countries = TERRITORY_COUNTRIES[t] || [];
+      const hubs = D.hubs.filter((h) => countries.includes(h.country));
+      const value = hubs.reduce((a, h) => a + (h.value || 0), 0);
+      const news = D.news.filter((n) => n.territory === t).length;
+      return `<button class="card hover rise rise-${i + 1}" data-terr="${esc(t)}" style="text-align:left;display:block">
+        <b style="font-size:15px">${esc(t)}</b>
+        <div class="sub" style="margin-top:4px">${hubs.length} hub${hubs.length === 1 ? "" : "s"} · ${fmtEUR(value)} open</div>
+        <div class="sub">${news} news item${news === 1 ? "" : "s"} this week</div>
+      </button>`;
+    }).join("");
     return `
     ${helpNote("flow")}
-    <div class="section-head"><h2>Market flow</h2><span class="sub">news scoped to where you sell</span></div>
+    <div class="section-head"><h2>Market flow</h2><span class="sub">where you sell, and what's moving there</span></div>
+    <div class="grid cols-4" style="margin-bottom:18px">${terrCards}</div>
     <div class="chips" style="margin-bottom:18px">
       ${terrs.map((t) => `<button class="chip ${flowFilter === t ? "on" : ""}" data-terr="${esc(t)}">${esc(t)}</button>`).join("")}
     </div>
@@ -626,7 +764,8 @@
         <button class="chip ${priceFilter === "all" ? "on" : ""}" data-pf="all">All</button>
         <button class="chip ${priceFilter === "verified" ? "on" : ""}" data-pf="verified">Verified only</button>
         <button class="chip ${priceFilter === "estimated" ? "on" : ""}" data-pf="estimated">Estimated OEM</button>
-      </div></div>
+      </div>
+      <button class="btn primary sm" data-act="add-comp">+ Add price</button></div>
     <div class="table-wrap"><table class="data">
       <thead><tr><th>Competitor</th><th>Product</th><th>Comparable to</th><th class="num">Price</th><th>Confidence</th><th>Source</th></tr></thead>
       <tbody>${rows.map((c) => {
@@ -650,7 +789,8 @@
     D.people.forEach((p) => { (byCountry[p.country] = byCountry[p.country] || []).push(p); });
     return `
     ${helpNote("people")}
-    <div class="section-head"><h2>Key persons</h2><span class="sub">who decides, who influences, where to meet them</span></div>
+    <div class="section-head"><h2>Key persons</h2><span class="sub">who decides, who influences, where to meet them</span><span class="grow"></span>
+      <button class="btn primary sm" data-act="add-person">+ Add person</button></div>
     ${Object.entries(byCountry).map(([country, people]) => `
       <div class="section-head" style="margin-top:22px"><h2 style="font-size:16px">${people[0].flag} ${esc(country)}</h2></div>
       <div class="grid cols-3">
@@ -664,6 +804,33 @@
           <span class="meet">Meet: ${esc(p.meet)}</span>
         </div>`).join("")}
       </div>`).join("")}`;
+  }
+
+  /* ---------- proposals (aggregate) ---------- */
+  function vProposals() {
+    const rows = [];
+    D.hubs.forEach((h) => (h.proposals || []).forEach((p) => rows.push({ p, hub: h })));
+    rows.sort((a, b) => (b.p.sent || "").localeCompare(a.p.sent || ""));
+    const open = rows.filter((r) => !["Accepted", "Declined"].includes(r.p.status)).reduce((a, r) => a + (r.p.value || 0), 0);
+    const won = rows.filter((r) => r.p.status === "Accepted").reduce((a, r) => a + (r.p.value || 0), 0);
+    return `
+    ${helpNote("proposals")}
+    <div class="section-head"><h2>Proposals</h2><span class="sub">every offer, across every hub</span><span class="grow"></span>
+      <button class="btn primary sm" data-act="add-proposal-any">+ New proposal</button></div>
+    <div class="grid cols-3" style="margin-bottom:16px">
+      <div class="card stat rise rise-1"><span class="label">Open value</span><span class="value">${fmtEUR(open)}</span></div>
+      <div class="card stat rise rise-2"><span class="label">Accepted value</span><span class="value">${fmtEUR(won)}</span></div>
+      <div class="card stat rise rise-3"><span class="label">Proposals total</span><span class="value">${rows.length}</span></div>
+    </div>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Proposal</th><th>Customer</th><th class="num">Value</th><th>Status</th><th>Sent</th></tr></thead>
+      <tbody>${rows.map((r) => `<tr>
+        <td><b>${esc(r.p.name)}</b></td>
+        <td><a href="#/hub/${r.hub.id}/proposals" style="text-decoration:none">${r.hub.flag} ${esc(r.hub.company)}</a></td>
+        <td class="num">${fmtEUR(r.p.value)}</td>
+        <td><span class="badge ${r.p.status === "Accepted" ? "good" : r.p.status === "Declined" ? "crit" : "warn"}">${esc(r.p.status)}</span></td>
+        <td>${esc(r.p.sent)}</td></tr>`).join("") || `<tr><td colspan="5"><div class="empty">No proposals yet.</div></td></tr>`}
+      </tbody></table></div>`;
   }
 
   /* ---------- settings ---------- */
@@ -728,6 +895,7 @@
   const ROUTES = {
     dashboard: { title: "Dashboard", fn: vDashboard },
     hubs: { title: "Customer hubs", fn: vHubs },
+    proposals: { title: "Proposals", fn: vProposals },
     studio: { title: "Presentation studio", fn: vStudio },
     flow: { title: "Market flow", fn: vFlow },
     travel: { title: "Travel planner", fn: vTravel },
@@ -740,6 +908,14 @@
     const hash = location.hash || "#/dashboard";
     const parts = hash.replace(/^#\//, "").split("/");
     let html, crumb, navActive;
+    if (lockedCustomer && D.hubs.some((x) => x.id === lockedCustomer)) {
+      const tab = parts[0] === "hub" && parts[1] === lockedCustomer ? parts[2] : undefined;
+      const h = D.hubs.find((x) => x.id === lockedCustomer);
+      view.innerHTML = `<div class="view">${vHub(lockedCustomer, tab)}</div>`;
+      $("#crumb").innerHTML = `<b>${esc(h.company)}</b> <span style="color:var(--ink-3)">· shared by NordCell Power · powered by <b style="font-family:var(--serif)">min<span style="color:var(--accent)">ra</span></b></span>`;
+      window.scrollTo({ top: 0, behavior: "instant" });
+      return;
+    }
     if (parts[0] === "hub" && parts[1]) {
       html = vHub(parts[1], parts[2]);
       const h = D.hubs.find((x) => x.id === parts[1]);
@@ -802,7 +978,7 @@
         return;
       }
       if (a === "reset-demo") {
-        ["minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen"].forEach((k) => store.del(k));
+        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen"].forEach((k) => store.del(k));
         Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
         ["crm", "erp", "wms", "cal"].forEach((k) => store.del("minra.int." + k));
         toast("Demo data reset.");
@@ -814,8 +990,44 @@
         if (t && downloadICS(t)) toast(t.meetings.length + " meetings exported — import the .ics into your calendar.");
         return;
       }
-      if (a === "invite") toast("Invitation link copied — send it to your customer's team.");
-      else if (a === "share-deck") toast("Deck shared to the hub — the customer team was notified.");
+      if (a === "invite") {
+        const h = hubFromRoute(); if (!h) return;
+        const link = location.origin + location.pathname + "?customer=" + h.id;
+        openModal(`
+          <h3>Invite ${esc(h.company)}</h3>
+          <p class="sub">Anyone with this link sees the customer view of this hub — prices, documents, proposals and presentations. Nothing internal.</p>
+          <div class="field"><label>Customer link</label><input id="inv-link" readonly value="${esc(link)}" onclick="this.select()" /></div>
+          <div class="modal-actions">
+            <button class="btn ghost sm" data-act="modal-close">Done</button>
+            <a class="btn ghost sm" href="${esc(link)}" target="_blank" rel="noopener">Open preview ↗</a>
+            <button class="btn primary sm" data-act="copy-invite">Copy link</button>
+          </div>`);
+        return;
+      }
+      if (a === "copy-invite") {
+        const el = $("#inv-link"); if (!el) return;
+        el.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch (err) { /* fall through */ }
+        try { if (navigator.clipboard) { navigator.clipboard.writeText(el.value); ok = true; } } catch (err) { /* fall through */ }
+        toast(ok ? "Link copied — send it to your customer's team." : "Select the link and copy it manually.");
+        return;
+      }
+
+      // CRUD forms
+      if (a === "add-price") { editIndex = -1; FORMS.price(); return; }
+      if (a === "edit-price") { const h = hubFromRoute(); if (!h) return; editIndex = +act.dataset.i; FORMS.price(h.priceList[editIndex]); return; }
+      if (a === "del-price") { const h = hubFromRoute(); if (!h) return; h.priceList.splice(+act.dataset.i, 1); persist(); buildSearchIndex(); render(); toast("Removed from price list."); return; }
+      if (a === "add-doc") { FORMS.doc(); return; }
+      if (a === "del-doc") { const h = hubFromRoute(); if (!h) return; h.docs.splice(+act.dataset.i, 1); persist(); buildSearchIndex(); render(); toast("Document removed."); return; }
+      if (a === "add-proposal") { FORMS.proposal(false); return; }
+      if (a === "add-proposal-any") { FORMS.proposal(true); return; }
+      if (a === "add-note") { FORMS.note(); return; }
+      if (a === "add-person") { FORMS.person(); return; }
+      if (a === "add-comp") { FORMS.comp(); return; }
+      if (a.startsWith("save-")) { saveForms(a); return; }
+
+      if (a === "share-deck") toast("Deck shared to the hub — the customer team was notified.");
       else toast("This is a demo action.");
       return;
     }
@@ -859,6 +1071,10 @@
   $("#user-role").textContent = u.role;
   const wsn = store.get("minra.wsname");
   if (wsn) $(".logo-sub").textContent = wsn.toUpperCase();
+  if (lockedCustomer) {
+    document.body.classList.add("customer-mode");
+    login.classList.add("gone");
+  }
   window.addEventListener("hashchange", render);
   render();
 })();
