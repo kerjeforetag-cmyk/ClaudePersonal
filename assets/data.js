@@ -1,0 +1,295 @@
+/* ============================================================
+   Minra — demo dataset
+   Fictional tenant: NordCell Power AB (industrial battery systems)
+   All companies, people, prices and news items are invented for
+   the product demo. Replace with live data via the Minra API.
+   ============================================================ */
+
+window.MINRA = {
+
+  tenant: {
+    name: "NordCell Power AB",
+    tagline: "Industrial battery systems & charging",
+    user: { name: "Alex Kjellberg", role: "Sales Manager, Northern & Central Europe", initials: "AK" },
+    territories: ["Nordics", "DACH", "Baltics", "Poland"],
+    currency: "EUR"
+  },
+
+  kpis: {
+    pipelineValue: 2840000,
+    pipelineDelta: +12.4,
+    hubEngagement: 87,        // % of invited customers active last 30 days
+    engagementDelta: +6,
+    decksGenerated: 34,
+    decksDelta: +9,
+    openProposals: 11,
+    proposalsDelta: -2,
+    pipelineTrend: [1.62, 1.71, 1.68, 1.80, 1.94, 2.02, 1.97, 2.21, 2.30, 2.42, 2.61, 2.84], // €M, 12 months
+    pipelineByStage: [
+      { stage: "Qualified", value: 640000 },
+      { stage: "Hub invited", value: 520000 },
+      { stage: "Proposal sent", value: 880000 },
+      { stage: "Negotiation", value: 560000 },
+      { stage: "Verbal commit", value: 240000 }
+    ]
+  },
+
+  hubs: [
+    {
+      id: "mueller",
+      company: "Müller Fördertechnik GmbH",
+      country: "Germany", flag: "🇩🇪",
+      industry: "Intralogistics & forklift fleets",
+      contact: "Jürgen Bade",
+      contactRole: "Head of Procurement",
+      stage: "Proposal sent",
+      value: 480000,
+      health: "good",
+      lastActivity: "2026-07-06",
+      members: 6,
+      activity30d: [2,4,3,6,5,8,7,9,6,11,9,12],
+      accent: "#2a78d6",
+      about: "Family-owned intralogistics operator in Baden-Württemberg running a mixed fleet of ~310 forklifts across 4 distribution sites. Evaluating full conversion from lead-acid to Li-ion with opportunity charging.",
+      priceList: [
+        { sku: "NC-LI4880", name: "NordCell Li-ion 48V / 800Ah pack", list: 11900, hub: 10400, moq: 10 },
+        { sku: "NC-LI4860", name: "NordCell Li-ion 48V / 600Ah pack", list: 9200, hub: 8100, moq: 10 },
+        { sku: "NC-CHG30", name: "SmartCharge 30kW opportunity charger", list: 6400, hub: 5700, moq: 4 },
+        { sku: "NC-CHG10", name: "SmartCharge 10kW depot charger", list: 2900, hub: 2560, moq: 8 },
+        { sku: "NC-BMS-FLEET", name: "FleetView telemetry & BMS license (per unit / yr)", list: 240, hub: 190, moq: 50 }
+      ],
+      docs: [
+        { name: "NC-LI4880 technical datasheet", type: "PDF", size: "2.1 MB", updated: "2026-06-28" },
+        { name: "SmartCharge 30kW installation guide", type: "PDF", size: "4.8 MB", updated: "2026-06-12" },
+        { name: "CE & UN38.3 certificates bundle", type: "ZIP", size: "9.3 MB", updated: "2026-05-30" },
+        { name: "FleetView API reference", type: "HTML", size: "—", updated: "2026-06-20" }
+      ],
+      proposals: [
+        { name: "Fleet electrification — Phase 1 (Ludwigsburg site)", value: 480000, status: "Awaiting customer", sent: "2026-06-30" },
+        { name: "Pilot: 12 trucks + 4 chargers", value: 96000, status: "Accepted", sent: "2026-04-14" }
+      ],
+      presentations: [
+        { name: "Fleet Electrification Proposal — Signature", tier: "Signature", url: "presentations/mueller-signature.html", generated: "2026-07-05", views: 14 },
+        { name: "Fleet Electrification Proposal — Essential", tier: "Essential", url: "presentations/mueller-essential.html", generated: "2026-07-05", views: 5 }
+      ],
+      timeline: [
+        { when: "2026-07-06 14:12", who: "Jürgen Bade", what: "Viewed Signature presentation (slides 1–9, 6 min)" },
+        { when: "2026-07-04 09:30", who: "Alex Kjellberg", what: "Shared updated hub price list (Q3 rates)" },
+        { when: "2026-07-01 16:44", who: "Petra Vogel", what: "Downloaded CE & UN38.3 certificates bundle" },
+        { when: "2026-06-30 11:05", who: "Alex Kjellberg", what: "Sent proposal: Fleet electrification — Phase 1" },
+        { when: "2026-06-24 10:18", who: "Jürgen Bade", what: "Commented on NC-LI4880 datasheet: \"Need C-rate at −10°C\"" }
+      ]
+    },
+    {
+      id: "vestfjord",
+      company: "Vestfjord Aqua AS",
+      country: "Norway", flag: "🇳🇴",
+      industry: "Aquaculture workboats",
+      contact: "Ingrid Solheim",
+      contactRole: "Technical Director",
+      stage: "Negotiation",
+      value: 340000,
+      health: "good",
+      lastActivity: "2026-07-03",
+      members: 4,
+      activity30d: [1,3,2,4,4,5,3,6,7,5,8,7],
+      accent: "#1baf7a",
+      about: "Operates 22 electric workboats servicing salmon farms in Nordland. Hybrid-to-full-electric refit program 2026–2028.",
+      priceList: [], docs: [], proposals: [
+        { name: "Workboat refit — batch 2 (8 vessels)", value: 340000, status: "In negotiation", sent: "2026-06-18" }
+      ], presentations: [], timeline: []
+    },
+    {
+      id: "baltika",
+      company: "Baltika Marine OÜ",
+      country: "Estonia", flag: "🇪🇪",
+      industry: "Harbor & ferry operations",
+      contact: "Marten Kask",
+      contactRole: "Fleet Manager",
+      stage: "Hub invited",
+      value: 210000,
+      health: "warning",
+      lastActivity: "2026-06-21",
+      members: 2,
+      activity30d: [3,2,1,2,1,0,1,0,0,1,0,0],
+      accent: "#eda100",
+      about: "Tallinn harbor services company. Interest in shore-charging infrastructure; procurement paused until Q4 budget review.",
+      priceList: [], docs: [], proposals: [], presentations: [], timeline: []
+    },
+    {
+      id: "kowalski",
+      company: "Kowalski Logistyka Sp. z o.o.",
+      country: "Poland", flag: "🇵🇱",
+      industry: "3PL warehousing",
+      contact: "Agnieszka Nowak",
+      contactRole: "COO",
+      stage: "Qualified",
+      value: 390000,
+      health: "good",
+      lastActivity: "2026-07-05",
+      members: 3,
+      activity30d: [0,1,2,2,3,4,4,6,5,7,8,9],
+      accent: "#4a3aa7",
+      about: "Fast-growing 3PL with new 60,000 m² facility near Łódź. Greenfield opportunity — full Li-ion fleet from day one.",
+      priceList: [], docs: [], proposals: [], presentations: [], timeline: []
+    },
+    {
+      id: "lindqvist",
+      company: "Lindqvist Automation AB",
+      country: "Sweden", flag: "🇸🇪",
+      industry: "AGV & warehouse automation",
+      contact: "Sara Lindqvist",
+      contactRole: "CEO",
+      stage: "Verbal commit",
+      value: 240000,
+      health: "good",
+      lastActivity: "2026-07-07",
+      members: 5,
+      activity30d: [4,5,6,5,7,8,9,8,10,9,11,12],
+      accent: "#e34948",
+      about: "OEM partner integrating NordCell packs into AGV platforms. Frame agreement for 2027 in verbal commit.",
+      priceList: [], docs: [], proposals: [], presentations: [], timeline: []
+    }
+  ],
+
+  news: [
+    { territory: "DACH", date: "2026-07-06", source: "Logistik Heute", tag: "Market",
+      title: "German intralogistics orders up 9% in H1 as warehouse automation rebounds",
+      body: "Order intake across German material-handling suppliers grew 9.2% year-on-year, driven by retrofit and electrification projects." },
+    { territory: "DACH", date: "2026-07-04", source: "Handelsblatt", tag: "Regulation",
+      title: "Berlin extends e-mobility depreciation scheme to industrial trucks",
+      body: "Accelerated depreciation now covers Li-ion forklift fleets — a direct tailwind for conversion business cases." },
+    { territory: "DACH", date: "2026-06-30", source: "LogiMAT press", tag: "Event",
+      title: "LogiMAT 2027 exhibitor registration opens; hall 10 dedicated to energy systems",
+      body: "Stuttgart fair confirms a dedicated energy hall. Early-bird stand booking closes October 15." },
+    { territory: "Nordics", date: "2026-07-05", source: "Dagens Industri", tag: "Market",
+      title: "Swedish 3PL sector consolidates: two major warehouse operators announce merger",
+      body: "Combined entity will operate 14 sites — procurement contacts likely to be centralized in Gothenburg." },
+    { territory: "Nordics", date: "2026-07-02", source: "IntraFish", tag: "Market",
+      title: "Norway raises subsidy ceiling for electric workboats to NOK 4.5m per vessel",
+      body: "Enova scheme update improves ROI for aquaculture fleet electrification by 15–20%." },
+    { territory: "Baltics", date: "2026-06-28", source: "ERR News", tag: "Tender",
+      title: "Port of Tallinn publishes tender for shore-power and charging infrastructure",
+      body: "€8.2M framework, submissions due September 30. Baltika Marine named as an operating partner in the RFI." },
+    { territory: "Poland", date: "2026-07-03", source: "Puls Biznesu", tag: "Market",
+      title: "Łódź logistics corridor attracts record warehouse investment in Q2",
+      body: "410,000 m² of new capacity signed — three greenfield operators without incumbent energy suppliers." },
+    { territory: "Poland", date: "2026-06-25", source: "PSPA", tag: "Regulation",
+      title: "Poland notifies EU of new energy-storage safety code for indoor charging rooms",
+      body: "New ventilation and BMS-telemetry requirements from 2027 — favors suppliers with certified fleet telemetry." }
+  ],
+
+  travel: {
+    suggestions: [
+      {
+        id: "stuttgart",
+        destination: "Stuttgart, Germany",
+        window: "Sep 21 – Sep 25, 2026",
+        score: 94,
+        reasons: [
+          "Müller Fördertechnik board reviews Phase-1 proposal week 39",
+          "Motek trade fair (Sep 22–25) — 4 key prospects exhibiting",
+          "Flight index 18% below seasonal average that week",
+          "Jürgen Bade confirmed availability Mon–Wed"
+        ],
+        days: [
+          { d: "Sep 14", s: 55 }, { d: "Sep 15", s: 58 }, { d: "Sep 16", s: 60 }, { d: "Sep 17", s: 64 },
+          { d: "Sep 18", s: 62 }, { d: "Sep 19", s: 40 }, { d: "Sep 20", s: 45 },
+          { d: "Sep 21", s: 88 }, { d: "Sep 22", s: 96 }, { d: "Sep 23", s: 94 }, { d: "Sep 24", s: 90 },
+          { d: "Sep 25", s: 82 }, { d: "Sep 26", s: 48 }, { d: "Sep 27", s: 42 }
+        ],
+        meetings: [
+          { who: "Jürgen Bade — Müller Fördertechnik", slot: "Sep 22, 09:00", note: "Phase-1 proposal walkthrough (use Signature deck)" },
+          { who: "Anke Sommer — Süddeutsche Fördertechnik (distributor)", slot: "Sep 22, 15:30", note: "2027 stocking agreement" },
+          { who: "Motek hall 8 — prospect sweep", slot: "Sep 23, all day", note: "4 target OEMs exhibiting" }
+        ]
+      },
+      {
+        id: "tallinn",
+        destination: "Tallinn, Estonia",
+        window: "Oct 5 – Oct 7, 2026",
+        score: 78,
+        reasons: [
+          "Port of Tallinn tender Q&A session Oct 6",
+          "Baltika Marine budget review completes Oct 1 — re-engage in person",
+          "Combine with Helsinki ferry day-trip (2 dormant accounts)"
+        ],
+        days: [
+          { d: "Sep 28", s: 40 }, { d: "Sep 29", s: 44 }, { d: "Sep 30", s: 52 }, { d: "Oct 1", s: 60 },
+          { d: "Oct 2", s: 58 }, { d: "Oct 3", s: 35 }, { d: "Oct 4", s: 38 },
+          { d: "Oct 5", s: 84 }, { d: "Oct 6", s: 90 }, { d: "Oct 7", s: 80 },
+          { d: "Oct 8", s: 55 }, { d: "Oct 9", s: 50 }, { d: "Oct 10", s: 30 }, { d: "Oct 11", s: 28 }
+        ],
+        meetings: [
+          { who: "Marten Kask — Baltika Marine", slot: "Oct 5, 13:00", note: "Reactivate hub; shore-charging scope" },
+          { who: "Port of Tallinn — tender Q&A", slot: "Oct 6, 10:00", note: "€8.2M framework, register by Sep 20" }
+        ]
+      }
+    ]
+  },
+
+  competitors: [
+    {
+      vendor: "VoltEdge Systems", product: "VE-48/800 Li-ion pack", comparableTo: "NC-LI4880",
+      price: 12800, kind: "verified", source: "Public tender award, Hamburg Port Authority", checked: "2026-05-11"
+    },
+    {
+      vendor: "VoltEdge Systems", product: "VE-Rapid 30kW charger", comparableTo: "NC-CHG30",
+      price: 7100, kind: "verified", source: "Distributor price list Q2-2026 (Süddeutsche Fördertechnik)", checked: "2026-06-02"
+    },
+    {
+      vendor: "Accumat GmbH", product: "AM-Power 48-750", comparableTo: "NC-LI4880",
+      price: 10900, kind: "estimated", source: "OEM estimate — derived from AGV platform teardown pricing", checked: "2026-04-20"
+    },
+    {
+      vendor: "Accumat GmbH", product: "AM-Charge 25kW", comparableTo: "NC-CHG30",
+      price: 5900, kind: "estimated", source: "OEM estimate — reseller margin model (−22% off list)", checked: "2026-04-20"
+    },
+    {
+      vendor: "PowerCore Industries", product: "PC-M48 800Ah", comparableTo: "NC-LI4880",
+      price: 11750, kind: "verified", source: "Quote shared by Kowalski Logistyka (with permission)", checked: "2026-06-27"
+    },
+    {
+      vendor: "PowerCore Industries", product: "PC-Fleet telemetry (per unit / yr)", comparableTo: "NC-BMS-FLEET",
+      price: 310, kind: "estimated", source: "OEM estimate — SaaS pricing page, volume tier extrapolated", checked: "2026-06-27"
+    }
+  ],
+
+  people: [
+    { country: "Germany", flag: "🇩🇪", name: "Jürgen Bade", role: "Head of Procurement", org: "Müller Fördertechnik",
+      note: "Decision maker for Phase 1. Data-driven; wants TCO at −10°C. Prefers morning meetings.", meet: "Motek, Sep 22–25" },
+    { country: "Germany", flag: "🇩🇪", name: "Anke Sommer", role: "Managing Director", org: "Süddeutsche Fördertechnik (distributor)",
+      note: "Covers 40+ mid-size fleets in Bavaria/BW. Key channel for 2027. Values exclusivity terms.", meet: "Motek, Sep 22" },
+    { country: "Germany", flag: "🇩🇪", name: "Petra Vogel", role: "Site Engineering Lead", org: "Müller Fördertechnik",
+      note: "Technical gatekeeper — owns charging-room compliance. Downloaded all certificates.", meet: "Site visit, Ludwigsburg" },
+    { country: "Norway", flag: "🇳🇴", name: "Ingrid Solheim", role: "Technical Director", org: "Vestfjord Aqua",
+      note: "Champion for full-electric refit. Needs Enova subsidy paperwork support.", meet: "Aqua Nor, Trondheim (Aug)" },
+    { country: "Estonia", flag: "🇪🇪", name: "Marten Kask", role: "Fleet Manager", org: "Baltika Marine",
+      note: "Engagement dropped since June — budget freeze until Q4. Tender partner for Port of Tallinn.", meet: "Tallinn, Oct 5" },
+    { country: "Poland", flag: "🇵🇱", name: "Agnieszka Nowak", role: "COO", org: "Kowalski Logistyka",
+      note: "Greenfield site decision by November. Comparing NordCell vs PowerCore. Responds fast in hub.", meet: "Video call, weekly" },
+    { country: "Sweden", flag: "🇸🇪", name: "Sara Lindqvist", role: "CEO", org: "Lindqvist Automation",
+      note: "OEM frame agreement in verbal commit. Wants co-marketing at LogiMAT 2027.", meet: "Gothenburg office" }
+  ],
+
+  studio: {
+    objectives: [
+      { id: "proposal", name: "Commercial proposal", desc: "Pricing, TCO, rollout plan — built to close." },
+      { id: "intro", name: "Company introduction", desc: "First meeting — who you are, proof, references." },
+      { id: "renewal", name: "Renewal / expansion", desc: "Results so far, next-phase scope and pricing." },
+      { id: "tender", name: "Tender response", desc: "Structured compliance answer with evidence annexes." }
+    ],
+    tiers: [
+      {
+        id: "essential", name: "Essential", price: "Included",
+        desc: "Template-based HTML deck from your hub data. Clean, fast, on-brand.",
+        bullets: ["Generated in ~20 seconds", "Your logo, colors and price list", "Share as hub link or PDF"]
+      },
+      {
+        id: "signature", name: "Signature", price: "€29 / deck",
+        desc: "Bespoke, code-generated presentation — layout, charts and copy composed for this customer.",
+        bullets: ["Custom narrative & data storytelling", "Live charts from hub data", "Ambient motion, print-perfect", "Best results — recommended for proposals"],
+        recommended: true
+      }
+    ]
+  }
+};
