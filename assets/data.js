@@ -258,9 +258,9 @@ window.MINRA = {
           { d: "Sep 25", s: 82 }, { d: "Sep 26", s: 48 }, { d: "Sep 27", s: 42 }
         ],
         meetings: [
-          { who: "Jürgen Bade — Müller Fördertechnik", slot: "Sep 22, 09:00", note: "Phase-1 proposal walkthrough (use Signature deck)" },
-          { who: "Anke Sommer — Süddeutsche Fördertechnik (distributor)", slot: "Sep 22, 15:30", note: "2027 stocking agreement" },
-          { who: "Motek hall 8 — prospect sweep", slot: "Sep 23, all day", note: "4 target OEMs exhibiting" }
+          { who: "Jürgen Bade — Müller Fördertechnik", slot: "Sep 22, 09:00", note: "Phase-1 proposal walkthrough (use Signature deck)", dtStart: "20260922T090000", dtEnd: "20260922T100000" },
+          { who: "Anke Sommer — Süddeutsche Fördertechnik (distributor)", slot: "Sep 22, 15:30", note: "2027 stocking agreement", dtStart: "20260922T153000", dtEnd: "20260922T163000" },
+          { who: "Motek hall 8 — prospect sweep", slot: "Sep 23, all day", note: "4 target OEMs exhibiting", dtStart: "20260923T090000", dtEnd: "20260923T170000" }
         ]
       },
       {
@@ -280,8 +280,8 @@ window.MINRA = {
           { d: "Oct 8", s: 55 }, { d: "Oct 9", s: 50 }, { d: "Oct 10", s: 30 }, { d: "Oct 11", s: 28 }
         ],
         meetings: [
-          { who: "Marten Kask — Baltika Marine", slot: "Oct 5, 13:00", note: "Reactivate hub; shore-charging scope" },
-          { who: "Port of Tallinn — tender Q&A", slot: "Oct 6, 10:00", note: "€8.2M framework, register by Sep 20" }
+          { who: "Marten Kask — Baltika Marine", slot: "Oct 5, 13:00", note: "Reactivate hub; shore-charging scope", dtStart: "20261005T130000", dtEnd: "20261005T140000" },
+          { who: "Port of Tallinn — tender Q&A", slot: "Oct 6, 10:00", note: "€8.2M framework, register by Sep 20", dtStart: "20261006T100000", dtEnd: "20261006T110000" }
         ]
       }
     ]

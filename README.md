@@ -34,6 +34,11 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Help notes** — every section explains itself with a dismissible note; the `? Help` button brings them back
 - **Global search** — customers, SKUs, documents, people, news and competitor prices from the top bar
 - **View as customer** — one click inside any hub shows exactly what the invited team sees (deal value, stage and pulse analytics hidden)
+- **Live deck generation** — `assets/generator.js` builds complete standalone HTML decks from any hub's data (all customers × 4 objectives × both tiers), with in-app preview, HTML download and a Print/PDF button in every deck
+- **New hubs that stick** — create a hub from a modal; it persists in localStorage, joins search, the studio and notifications. Reset from Settings.
+- **Notifications** — a bell aggregating customer activity across every hub
+- **Settings** — workspace branding (name + four accent themes applied live), the simple pricing model (€49/mo base, Essential included, Signature €29/deck), team roles, integrations, demo reset
+- **Calendar export** — "Plan this trip" downloads an .ics with the suggested meetings
 
 ## Try it
 
@@ -54,11 +59,12 @@ Generated presentation examples (what the Studio produces):
 ## Structure
 
 ```
-index.html                        app shell (login, sidebar, topbar)
+index.html                        app shell (login, sidebar, topbar, overlays)
 assets/styles.css                 design system — ink on ivory, terracotta accent, ambient motion
-assets/app.js                     hash-routed SPA: views, charts, generator, help notes
+assets/app.js                     hash-routed SPA: views, charts, search, settings, notifications
+assets/generator.js               deck generator — hub data → standalone HTML presentations
 assets/data.js                    demo dataset (fictional tenant: NordCell Power AB)
-presentations/*.html              generated deck examples (self-contained files)
+presentations/*.html              hand-polished deck examples (self-contained files)
 ```
 
 Design notes: chart colors follow a CVD-validated palette (categorical + sequential ramps),
@@ -71,9 +77,9 @@ All companies, people, prices and news items are **fictional**, invented for the
 tenant *NordCell Power AB*, customers *Müller Fördertechnik*, *Vestfjord Aqua*, *Baltika Marine*,
 *Kowalski Logistyka*, *Lindqvist Automation*. Replace `assets/data.js` with live data to make it real.
 
-## Roadmap (v2+)
+## Roadmap (backend era)
 
-- Real authentication, multi-tenant workspaces and customer-side hub view
-- Presentation generation service (LLM-composed Signature decks from hub data)
+- Real authentication, multi-tenant workspaces and a customer-side hub login
+- LLM-composed Signature decks (the current generator is the template engine; Signature quality comes from composing narrative per customer — see the hand-polished examples)
 - News ingestion per territory; travel scoring from live fair/flight/weather feeds
-- Proposal e-signing, hub notifications, PDF export
+- Proposal e-signing and order flow

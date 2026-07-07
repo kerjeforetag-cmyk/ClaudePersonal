@@ -38,6 +38,38 @@
     toast._t = setTimeout(() => t.classList.remove("show"), 2600);
   }
 
+  /* ---------- persistence: custom hubs & branding ---------- */
+  const customHubs = (() => { try { return JSON.parse(store.get("minra.hubs.custom") || "[]"); } catch (e) { return []; } })();
+  customHubs.forEach((h) => { if (!D.hubs.some((x) => x.id === h.id)) D.hubs.push(h); });
+  function persistHubs() { store.set("minra.hubs.custom", JSON.stringify(customHubs)); }
+
+  const ACCENTS = {
+    terracotta: { accent: "#c96442", strong: "#b4552f", soft: "#f4e3da", ink: "#7c3a1e" },
+    forest: { accent: "#4a7c59", strong: "#3b6647", soft: "#e0eee4", ink: "#2d5238" },
+    indigo: { accent: "#4a5ec4", strong: "#3b4cae", soft: "#e3e6f7", ink: "#2e3a80" },
+    plum: { accent: "#8a4a7c", strong: "#713a65", soft: "#f0e0ec", ink: "#5a2d50" }
+  };
+  function applyAccent(key) {
+    const a = ACCENTS[key] || ACCENTS.terracotta;
+    const r = document.documentElement.style;
+    r.setProperty("--accent", a.accent); r.setProperty("--accent-strong", a.strong);
+    r.setProperty("--accent-soft", a.soft); r.setProperty("--accent-ink", a.ink);
+    store.set("minra.accent", key);
+  }
+  applyAccent(store.get("minra.accent") || "terracotta");
+
+  const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  function downloadFile(name, content, type) {
+    try {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([content], { type }));
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      return true;
+    } catch (e) { toast("Downloads are blocked in this embedded preview — use the repo version."); return false; }
+  }
+
   /* ---------- shared tooltip ---------- */
   const tip = document.createElement("div");
   tip.className = "tipbox";
@@ -106,7 +138,8 @@
     flow: ["News that follows your territories", "Market Flow watches the regions you sell in and surfaces only what affects your accounts: regulation, tenders, fairs and market moves. Tap a territory to focus."],
     travel: ["Why these days?", "Minra scores every day by customer availability, trade fairs and tenders nearby, flight-price index and weather — then recommends the window where one trip does the most work."],
     pricing: ["Verified vs estimated", "A Verified price was actually seen — a tender award, a distributor list, a quote a customer shared. An Estimated OEM price is our model of what the competitor charges OEMs when no document exists. Never mix them up in a negotiation."],
-    people: ["Know who matters before you land", "The people who decide, influence or block your deals — per country, with how they work and where to meet them. Add your own notes after every meeting."]
+    people: ["Know who matters before you land", "The people who decide, influence or block your deals — per country, with how they work and where to meet them. Add your own notes after every meeting."],
+    settings: ["Make it yours", "Branding flows into every hub and generated deck. The plan is simple on purpose: one monthly price, Essential decks included, Signature decks pay-as-you-go — no seats, no tiers."]
   };
   function helpNote(key) {
     if (store.get("minra.hn." + key) === "off") return "";
@@ -120,18 +153,23 @@
 
   /* ---------- global search ---------- */
   const searchIndex = [];
-  D.hubs.forEach((h) => {
-    searchIndex.push({ t: "Hub", label: h.company, sub: h.industry + " · " + h.country, hash: "#/hub/" + h.id });
-    h.priceList.forEach((p) => searchIndex.push({ t: "Price", label: p.sku + " — " + p.name, sub: h.company + " · " + fmtEUR(p.hub), hash: "#/hub/" + h.id + "/prices" }));
-    h.docs.forEach((d) => searchIndex.push({ t: "Doc", label: d.name, sub: h.company, hash: "#/hub/" + h.id + "/docs" }));
-  });
-  D.people.forEach((p) => searchIndex.push({ t: "Person", label: p.name, sub: p.role + " · " + p.org, hash: "#/people" }));
-  D.news.forEach((n) => searchIndex.push({ t: "News", label: n.title, sub: n.territory + " · " + n.source, hash: "#/flow" }));
-  D.competitors.forEach((c) => searchIndex.push({ t: "Competitor", label: c.vendor + " — " + c.product, sub: (c.kind === "verified" ? "Verified · " : "Est. OEM · ") + fmtEUR(c.price), hash: "#/pricing" }));
+  function buildSearchIndex() {
+    searchIndex.length = 0;
+    D.hubs.forEach((h) => {
+      searchIndex.push({ t: "Hub", label: h.company, sub: h.industry + " · " + h.country, hash: "#/hub/" + h.id });
+      h.priceList.forEach((p) => searchIndex.push({ t: "Price", label: p.sku + " — " + p.name, sub: h.company + " · " + fmtEUR(p.hub), hash: "#/hub/" + h.id + "/prices" }));
+      h.docs.forEach((d) => searchIndex.push({ t: "Doc", label: d.name, sub: h.company, hash: "#/hub/" + h.id + "/docs" }));
+    });
+    D.people.forEach((p) => searchIndex.push({ t: "Person", label: p.name, sub: p.role + " · " + p.org, hash: "#/people" }));
+    D.news.forEach((n) => searchIndex.push({ t: "News", label: n.title, sub: n.territory + " · " + n.source, hash: "#/flow" }));
+    D.competitors.forEach((c) => searchIndex.push({ t: "Competitor", label: c.vendor + " — " + c.product, sub: (c.kind === "verified" ? "Verified · " : "Est. OEM · ") + fmtEUR(c.price), hash: "#/pricing" }));
+  }
+  buildSearchIndex();
 
   const sInput = $("#global-search"), sBox = $("#search-results");
   function goTo(hash) {
     sBox.hidden = true; sInput.value = "";
+    const np = $("#notif-panel"); if (np) np.hidden = true;
     if (location.hash === hash) render(); else location.hash = hash;
   }
   function doSearch() {
@@ -156,6 +194,110 @@
     if (!e.target.closest("#search-box")) sBox.hidden = true;
   });
 
+  /* ---------- notifications ---------- */
+  const notifBtn = $("#notif-btn"), notifPanel = $("#notif-panel"), notifDot = $("#notif-dot");
+  function notifItems() {
+    const items = [];
+    D.hubs.forEach((h) => (h.timeline || []).forEach((t) => items.push({ when: t.when, who: t.who, what: t.what, hub: h })));
+    items.sort((a, b) => b.when.localeCompare(a.when));
+    return items.slice(0, 8);
+  }
+  function refreshNotifDot() {
+    const seen = store.get("minra.notif.seen") || "";
+    notifDot.hidden = !notifItems().some((i) => i.when > seen);
+  }
+  notifBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!notifPanel.hidden) { notifPanel.hidden = true; return; }
+    const items = notifItems();
+    notifPanel.innerHTML = `<div class="notif-head">Activity across your hubs</div>` +
+      (items.map((i) => `<button class="notif-item" data-go="#/hub/${i.hub.id}/activity">
+        <b>${esc(i.who)}</b> — ${esc(i.what)}<span class="src">${esc(i.hub.company)} · ${esc(i.when)}</span></button>`).join("") ||
+        `<div class="sr-empty">No activity yet.</div>`);
+    notifPanel.hidden = false;
+    if (items[0]) store.set("minra.notif.seen", items[0].when);
+    refreshNotifDot();
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#notif-panel") && !e.target.closest("#notif-btn")) notifPanel.hidden = true;
+  });
+  refreshNotifDot();
+
+  /* ---------- modal ---------- */
+  const modalWrap = $("#modal-wrap"), modalEl = $("#modal");
+  function openModal(html) { modalEl.innerHTML = html; modalWrap.hidden = false; }
+  function closeModal() { modalWrap.hidden = true; modalEl.innerHTML = ""; }
+  modalWrap.addEventListener("click", (e) => { if (e.target === modalWrap) closeModal(); });
+
+  const FLAGS = { Germany: "🇩🇪", Sweden: "🇸🇪", Norway: "🇳🇴", Denmark: "🇩🇰", Finland: "🇫🇮", Estonia: "🇪🇪", Poland: "🇵🇱", Netherlands: "🇳🇱", Austria: "🇦🇹", Switzerland: "🇨🇭" };
+  function newHubModal() {
+    openModal(`
+      <h3>New customer hub</h3><p class="sub">A private space you'll share with this customer's team.</p>
+      <div class="field"><label>Company</label><input id="nh-company" placeholder="e.g. Bergmann Intralogistik GmbH" /></div>
+      <div class="field"><label>Country</label><select id="nh-country">${Object.keys(FLAGS).map((c) => `<option>${c}</option>`).join("")}</select></div>
+      <div class="field"><label>Industry</label><input id="nh-industry" placeholder="e.g. Cold-chain warehousing" /></div>
+      <div class="field"><label>Primary contact</label><input id="nh-contact" placeholder="Name" /></div>
+      <div class="field"><label>Contact role</label><input id="nh-role" placeholder="e.g. Head of Procurement" /></div>
+      <div class="field"><label>Estimated deal value (€)</label><input id="nh-value" type="number" placeholder="250000" /></div>
+      <div class="modal-actions">
+        <button class="btn ghost sm" data-act="modal-close">Cancel</button>
+        <button class="btn primary sm" data-act="create-hub">Create hub</button>
+      </div>`);
+    $("#nh-company").focus();
+  }
+  function createHub() {
+    const val = (id) => $("#" + id).value.trim();
+    const company = val("nh-company");
+    if (!company) { toast("Give the hub a company name."); return; }
+    const country = $("#nh-country").value;
+    let id = slug(company).slice(0, 24) || "hub";
+    while (D.hubs.some((x) => x.id === id)) id += "-2";
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const hub = {
+      id, company, country, flag: FLAGS[country] || "🏳️",
+      industry: val("nh-industry") || "B2B industry",
+      contact: val("nh-contact") || "—", contactRole: val("nh-role") || "",
+      stage: "Qualified", value: Number(val("nh-value")) || 0, health: "good",
+      lastActivity: today, members: 1,
+      activity30d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      about: (val("nh-industry") || "New customer") + " — hub created " + today + ". Publish a price list and invite the customer team to get started.",
+      priceList: [], docs: [], proposals: [], presentations: [],
+      timeline: [{ when: today + " " + now.toTimeString().slice(0, 5), who: D.tenant.user.name, what: "Created this hub" }]
+    };
+    D.hubs.push(hub); customHubs.push(hub); persistHubs(); buildSearchIndex(); refreshNotifDot();
+    closeModal(); toast("Hub created — invite the customer when you're ready.");
+    location.hash = "#/hub/" + id;
+  }
+
+  /* ---------- deck overlay ---------- */
+  let lastDeck = null;
+  const deckOverlay = $("#deck-overlay"), deckFrame = $("#deck-frame"), deckTitle = $("#deck-title");
+  function openDeckOverlay() {
+    if (!lastDeck) return;
+    deckTitle.textContent = lastDeck.title;
+    deckFrame.srcdoc = lastDeck.html;
+    deckOverlay.hidden = false;
+  }
+  $("#deck-close").addEventListener("click", () => { deckOverlay.hidden = true; deckFrame.srcdoc = ""; });
+  $("#deck-download").addEventListener("click", () => {
+    if (lastDeck && downloadFile(slug(lastDeck.title) + ".html", lastDeck.html, "text/html")) toast("Deck downloaded as HTML.");
+  });
+
+  /* ---------- travel calendar export ---------- */
+  function downloadICS(trip) {
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Minra//Travel//EN"];
+    trip.meetings.forEach((m, i) => {
+      lines.push("BEGIN:VEVENT", "UID:minra-" + trip.id + "-" + i + "@minra.app",
+        "DTSTART:" + m.dtStart, "DTEND:" + m.dtEnd,
+        "SUMMARY:" + m.who.replace(/,/g, "\\,"),
+        "DESCRIPTION:" + m.note.replace(/,/g, "\\,"),
+        "LOCATION:" + trip.destination.replace(/,/g, "\\,"), "END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return downloadFile(trip.id + "-trip.ics", lines.join("\r\n"), "text/calendar");
+  }
+
   /* ---------- nav ---------- */
   const NAV = [
     { hash: "#/dashboard", name: "Dashboard", ico: "M3 13h7V3H3v10Zm0 8h7v-6H3v6Zm11 0h7V11h-7v10Zm0-18v6h7V3h-7Z" },
@@ -164,7 +306,8 @@
     { hash: "#/flow", name: "Market flow", ico: "M3 12h4l2-6 4 12 2-6h6" },
     { hash: "#/travel", name: "Travel planner", ico: "M2 16l20-6-8 4-2 6-2-4-8 0Z" },
     { hash: "#/pricing", name: "Competitor pricing", ico: "M12 2v20 M7 7h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8" },
-    { hash: "#/people", name: "Key persons", ico: "M16 11a4 4 0 1 0-8 0 M4 21c0-4 4-6 8-6s8 2 8 6" }
+    { hash: "#/people", name: "Key persons", ico: "M16 11a4 4 0 1 0-8 0 M4 21c0-4 4-6 8-6s8 2 8 6" },
+    { hash: "#/settings", name: "Settings", ico: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M19 12a7 7 0 0 0-.1-1.2l2.1-1.6-2-3.4-2.4 1a7 7 0 0 0-2.1-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2.1 1.2l-2.4-1-2 3.4 2.1 1.6a7 7 0 0 0 0 2.4L3 14.8l2 3.4 2.4-1a7 7 0 0 0 2.1 1.2L10 21h4l.5-2.6a7 7 0 0 0 2.1-1.2l2.4 1 2-3.4-2.1-1.6c.07-.4.1-.8.1-1.2Z" }
   ];
   function renderNav(active) {
     $("#nav").innerHTML = `<div class="nav-label">Workspace</div>` + NAV.map((n) => `
@@ -308,7 +451,7 @@
             <span class="src" style="display:block">Generated ${esc(p.generated)} · ${p.views} customer views</span>
             <a class="btn dark sm" style="margin-top:8px" href="${esc(p.url)}" target="_blank" rel="noopener">Open deck ↗</a>
           </div></div>`).join("")}</div>`
-        : `<div class="card"><div class="empty">No presentations yet.<br><br><a class="btn primary sm" href="#/studio">Generate one →</a></div></div>`;
+        : `<div class="card"><div class="empty">No presentations yet.<br><br><button class="btn primary sm" data-act="gen-for" data-hub="${h.id}">Generate one →</button></div></div>`;
     } else if (tab === "activity") {
       body = h.timeline.length ? `<div class="card"><ul class="timeline">${h.timeline.map((t) => `
         <li><span class="t-when">${esc(t.when)}</span><span><b>${esc(t.who)}</b> — ${esc(t.what)}</span></li>`).join("")}</ul></div>`
@@ -327,7 +470,7 @@
       ? `<span class="badge brand">Shared with ${h.members} members</span>`
       : `${stageBadge(h.stage)}
         <button class="btn primary sm" data-act="invite">+ Invite customer</button>
-        <a class="btn ghost sm" style="background:transparent;color:#efede4;border-color:#5a574b" href="#/studio">Generate presentation</a>
+        <button class="btn ghost sm" style="background:transparent;color:#efede4;border-color:#5a574b" data-act="gen-for" data-hub="${h.id}">Generate presentation</button>
         <button class="btn ghost sm" style="background:transparent;color:#efede4;border-color:#5a574b" data-act="cust-view">View as customer</button>`;
     return `
     ${custView ? "" : helpNote("hub")}
@@ -354,7 +497,7 @@
 
     <div class="step-head"><div class="step-num">1</div><h3>Who is it for?</h3></div>
     <div class="grid cols-3">
-      ${D.hubs.slice(0, 4).map((h) => `
+      ${D.hubs.map((h) => `
       <div class="pick ${s.customer === h.id ? "on" : ""}" data-pick="customer" data-val="${h.id}">
         <b>${h.flag} ${esc(h.company)}</b><p>${esc(h.industry)} — ${esc(h.stage)}</p>
       </div>`).join("")}
@@ -401,25 +544,29 @@
         $("#gen-log").textContent = "minra compose · " + tier.name.toLowerCase() + " · step " + (i + 1) + "/" + steps.length;
         i++; setTimeout(tick, stepT);
       } else {
-        const DECKS = {
+        const objName = D.studio.objectives.find((o) => o.id === s.objective).name;
+        lastDeck = {
+          html: window.MinraGen.buildDeck(hub, s.objective, s.tier),
+          title: hub.company + " — " + objName + " · " + tier.name
+        };
+        const EXAMPLES = {
           mueller: { signature: "presentations/mueller-signature.html", essential: "presentations/mueller-essential.html" },
           kowalski: { signature: "presentations/kowalski-intro-signature.html" }
         };
-        const own = DECKS[s.customer] && DECKS[s.customer][s.tier];
-        const url = own || (s.tier === "signature" ? "presentations/mueller-signature.html" : "presentations/mueller-essential.html");
-        const note = own ? "" :
-          `<p class="axis-note" style="margin-top:10px">Demo workspace: sample output shown for Müller Fördertechnik.</p>`;
+        const ex = EXAMPLES[s.customer] && EXAMPLES[s.customer][s.tier];
         panel.innerHTML = `
           <div class="deck-result">
             <div class="deck-thumb ${s.tier === "essential" ? "light" : ""}">${esc(tier.name)}</div>
             <div style="flex:1">
-              <b style="font-size:15px">${esc(hub.company)} — ${esc(D.studio.objectives.find((o) => o.id === s.objective).name)}</b>
-              <span class="src" style="display:block">Generated just now · ${esc(tier.price)} · HTML</span>
+              <b style="font-size:15px">${esc(hub.company)} — ${esc(objName)}</b>
+              <span class="src" style="display:block">Generated just now from hub data · ${esc(tier.price)} · standalone HTML</span>
               <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-                <a class="btn primary sm" href="${url}" target="_blank" rel="noopener">Open deck ↗</a>
+                <button class="btn primary sm" data-act="deck-preview">Preview deck</button>
+                <button class="btn ghost sm" data-act="deck-dl">Download HTML</button>
                 <button class="btn ghost sm" data-act="share-deck">Share to hub</button>
+                ${ex ? `<a class="btn ghost sm" href="${ex}" target="_blank" rel="noopener">Hand-polished example ↗</a>` : ""}
                 <button class="btn ghost sm" id="gen-again">Generate another</button>
-              </div>${note}
+              </div>
             </div>
           </div>`;
         $("#gen-again").addEventListener("click", () => { render(); });
@@ -519,6 +666,64 @@
       </div>`).join("")}`;
   }
 
+  /* ---------- settings ---------- */
+  function vSettings() {
+    const accentKey = store.get("minra.accent") || "terracotta";
+    const ws = store.get("minra.wsname") || D.tenant.name;
+    const integrations = [
+      { k: "crm", name: "CRM sync", desc: "HubSpot / Pipedrive — hubs and stages stay in sync" },
+      { k: "erp", name: "ERP export", desc: "Orders and price lists to your ERP (SAP, Monitor, Fortnox)" },
+      { k: "wms", name: "Customer WMS webhook", desc: "FleetView telemetry into the customer's WMS" },
+      { k: "cal", name: "Calendar", desc: "Travel plans and meetings to Outlook / Google Calendar" }
+    ];
+    return `
+    ${helpNote("settings")}
+    <div class="section-head"><h2>Settings</h2><span class="sub">workspace, plan and integrations</span></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Branding</h3><p class="sub">Your hubs and generated decks wear your identity.</p>
+        <div class="field" style="margin-top:14px"><label>Workspace name</label><input id="ws-name" value="${esc(ws)}" /></div>
+        <label style="font-size:12px;font-weight:600;color:var(--ink-2)">Accent color</label>
+        <div class="swatch-row">
+          ${Object.entries(ACCENTS).map(([k, a]) => `<button class="swatch ${k === accentKey ? "on" : ""}" data-accent="${k}" style="background:${a.accent}" title="${k}" aria-label="${k}"></button>`).join("")}
+        </div>
+      </div>
+      <div class="card">
+        <h3>Plan &amp; billing</h3><p class="sub">Studio plan · billed monthly · cancel anytime</p>
+        <div class="grid cols-2" style="margin-top:14px">
+          <div class="stat"><span class="label">Base plan</span><span class="value" style="font-size:24px">€49<span style="font-size:13px;color:var(--ink-3);font-weight:500">/mo</span></span><span class="sub">Hubs, market flow, travel &amp; pricing intel — unlimited. Essential decks included.</span></div>
+          <div class="stat"><span class="label">Signature decks this month</span><span class="value" style="font-size:24px">6 × €29</span><span class="sub">Pay per deck. No seats, no tiers, no surprises.</span></div>
+        </div>
+        <div class="table-wrap" style="margin-top:14px"><table class="data">
+          <thead><tr><th>Invoice</th><th class="num">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>June 2026</td><td class="num">€223</td><td><span class="badge good">Paid</span></td></tr>
+            <tr><td>May 2026</td><td class="num">€136</td><td><span class="badge good">Paid</span></td></tr>
+            <tr><td>April 2026</td><td class="num">€78</td><td><span class="badge good">Paid</span></td></tr>
+          </tbody></table></div>
+      </div>
+      <div class="card">
+        <h3>Team</h3><p class="sub">Everyone sees the same hubs. Roles control publishing.</p>
+        <div class="int-row"><div class="avatar">AK</div><div class="grow"><b>Alex Kjellberg</b><span class="src">Owner · Sales Manager</span></div><span class="badge brand">You</span></div>
+        <div class="int-row"><div class="avatar" style="background:var(--night)">MB</div><div class="grow"><b>Maja Berg</b><span class="src">Editor · Inside Sales</span></div></div>
+        <div class="int-row"><div class="avatar" style="background:var(--night)">TE</div><div class="grow"><b>Tomas Ek</b><span class="src">Viewer · Finance</span></div></div>
+        <button class="btn ghost sm" data-act="demo" style="margin-top:12px">+ Invite teammate</button>
+      </div>
+      <div class="card">
+        <h3>Integrations</h3><p class="sub">Minra plays well with what you already run.</p>
+        ${integrations.map((i) => {
+          const on = store.get("minra.int." + i.k) === "on";
+          return `<div class="int-row"><div class="grow"><b>${esc(i.name)}</b><span class="src">${esc(i.desc)}</span></div>
+            <div class="toggle ${on ? "on" : ""}" data-int="${i.k}" role="switch" aria-checked="${on}" tabindex="0"></div></div>`;
+        }).join("")}
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Demo data</h3><p class="sub">Reset hubs you created, help notes and branding back to demo defaults.</p>
+      <button class="btn ghost sm" data-act="reset-demo" style="margin-top:10px;color:var(--critical)">Reset demo data</button>
+    </div>`;
+  }
+
   /* ---------- router ---------- */
   const ROUTES = {
     dashboard: { title: "Dashboard", fn: vDashboard },
@@ -527,7 +732,8 @@
     flow: { title: "Market flow", fn: vFlow },
     travel: { title: "Travel planner", fn: vTravel },
     pricing: { title: "Competitor pricing", fn: vPricing },
-    people: { title: "Key persons", fn: vPeople }
+    people: { title: "Key persons", fn: vPeople },
+    settings: { title: "Settings", fn: vSettings }
   };
 
   function render() {
@@ -568,16 +774,64 @@
 
     if (e.target.closest("#gen-btn")) { runGeneration(); return; }
 
+    const sw = e.target.closest("[data-accent]");
+    if (sw) { applyAccent(sw.dataset.accent); render(); toast("Accent updated across the workspace."); return; }
+
+    const tg = e.target.closest("[data-int]");
+    if (tg) {
+      const k = "minra.int." + tg.dataset.int;
+      const on = store.get(k) === "on";
+      store.set(k, on ? "off" : "on");
+      tg.classList.toggle("on", !on);
+      tg.setAttribute("aria-checked", String(!on));
+      toast(on ? "Integration disconnected." : "Integration connected — syncing.");
+      return;
+    }
+
     const act = e.target.closest("[data-act]");
     if (act) {
       const a = act.dataset.act;
       if (a === "cust-view") { custView = !custView; render(); return; }
+      if (a === "gen-for") { studioState.customer = act.dataset.hub; location.hash = "#/studio"; render(); return; }
+      if (a === "modal-close") { closeModal(); return; }
+      if (a === "create-hub") { createHub(); return; }
+      if (a === "new-hub") { newHubModal(); return; }
+      if (a === "deck-preview") { openDeckOverlay(); return; }
+      if (a === "deck-dl") {
+        if (lastDeck && downloadFile(slug(lastDeck.title) + ".html", lastDeck.html, "text/html")) toast("Deck downloaded as HTML.");
+        return;
+      }
+      if (a === "reset-demo") {
+        ["minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen"].forEach((k) => store.del(k));
+        Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
+        ["crm", "erp", "wms", "cal"].forEach((k) => store.del("minra.int." + k));
+        toast("Demo data reset.");
+        setTimeout(() => location.reload(), 600);
+        return;
+      }
+      if (a === "plan-trip") {
+        const t = D.travel.suggestions.find((x) => x.destination === act.dataset.dest);
+        if (t && downloadICS(t)) toast(t.meetings.length + " meetings exported — import the .ics into your calendar.");
+        return;
+      }
       if (a === "invite") toast("Invitation link copied — send it to your customer's team.");
-      else if (a === "new-hub") toast("Demo workspace: hub creation is disabled.");
       else if (a === "share-deck") toast("Deck shared to the hub — the customer team was notified.");
-      else if (a === "plan-trip") toast("Trip added to your calendar: " + act.dataset.dest);
       else toast("This is a demo action.");
       return;
+    }
+  });
+
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "ws-name") {
+      const v = e.target.value.trim() || D.tenant.name;
+      store.set("minra.wsname", v);
+      $(".logo-sub").textContent = v.toUpperCase();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (!deckOverlay.hidden) { deckOverlay.hidden = true; deckFrame.srcdoc = ""; }
+      else if (!modalWrap.hidden) closeModal();
     }
   });
 
@@ -603,6 +857,8 @@
   $("#user-avatar").textContent = u.initials;
   $("#user-name").textContent = u.name;
   $("#user-role").textContent = u.role;
+  const wsn = store.get("minra.wsname");
+  if (wsn) $(".logo-sub").textContent = wsn.toUpperCase();
   window.addEventListener("hashchange", render);
   render();
 })();
