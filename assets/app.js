@@ -807,7 +807,7 @@
     ${banner}
     <div class="hub-hero ambient">
       <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
-        <div><h1>${h.flag} ${esc(h.company)}</h1><div class="sub">${custView ? "Partner hub · NordCell Power AB" : esc(h.industry) + " · " + esc(h.contact) + ", " + esc(h.contactRole)}</div></div>
+        <div><h1>${h.flag} ${esc(h.company)}</h1><div class="sub">${custView ? "Partner hub · NordCell Power AB" : [esc(h.industry), [h.contact && esc(h.contact), h.contactRole && esc(h.contactRole)].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</div></div>
         ${heroRight}
       </div>
       <div class="hub-hero-row">${heroActions}</div>
@@ -1144,8 +1144,8 @@
       <div class="col-chart">
         ${months.map((m, i) => `
         <div class="col" data-tip="${monthLabel(m)}: ${fmtEUR(byMonth[i])} expected">
-          <div class="v">${byMonth[i] ? "€" + Math.round(byMonth[i] / 1000) + "k" : ""}</div>
-          <div class="bar-slot"><div class="bar" style="height:${Math.max(byMonth[i] ? 10 : 2, byMonth[i] / maxM * 120)}px"></div></div>
+          <div class="v"${byMonth[i] ? "" : ' style="opacity:.4"'}>${byMonth[i] ? "€" + Math.round(byMonth[i] / 1000) + "k" : "€0"}</div>
+          <div class="bar-slot"><div class="bar${byMonth[i] ? "" : " empty"}" style="height:${byMonth[i] ? Math.max(10, byMonth[i] / maxM * 120) : 4}px"></div></div>
           <div class="m">${monthLabel(m)}</div>
         </div>`).join("")}
       </div>
@@ -1290,6 +1290,9 @@
     $("#crumb").innerHTML = crumb;
     renderNav(navActive);
     $("#sidebar").classList.remove("open");
+    $("#nav-scrim").classList.remove("show");
+    const gs = $("#global-search"); if (gs) gs.value = "";
+    const sr = $("#search-results"); if (sr) sr.hidden = true;
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -1535,7 +1538,13 @@
     render();
     toast("Help notes restored on every page.");
   });
-  $("#menu-btn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  const navScrim = $("#nav-scrim");
+  function setNav(open) {
+    $("#sidebar").classList.toggle("open", open);
+    navScrim.classList.toggle("show", open);
+  }
+  $("#menu-btn").addEventListener("click", () => setNav(!$("#sidebar").classList.contains("open")));
+  navScrim.addEventListener("click", () => setNav(false));
   $("#theme-btn").addEventListener("click", () => { applyTheme(isDark() ? "light" : "dark"); render(); });
   $("#import-file").addEventListener("change", (e) => {
     const f = e.target.files[0];
