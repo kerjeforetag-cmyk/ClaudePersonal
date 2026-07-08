@@ -10,6 +10,7 @@
   // honor the theme the visitor picked in the app (falls back to system)
   try { var t = localStorage.getItem("mimra.theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 </script>
+<noscript><style>.rv { opacity: 1 !important; transform: none !important; }</style></noscript>
 <style>
   :root {
     --paper: #f6f4ee; --card: #fcfcfb; --ink: #1a1915; --ink-2: #52514e; --ink-3: #898781;
@@ -84,6 +85,8 @@
   .rv { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
   .rv.in { opacity: 1; transform: none; }
   .rv.d1 { transition-delay: .12s; } .rv.d2 { transition-delay: .24s; } .rv.d3 { transition-delay: .36s; }
+  /* never keep content hidden when printing */
+  @media print { .rv { opacity: 1 !important; transform: none !important; } }
 
   /* hero */
   .hero { padding: 92px 0 70px; }
@@ -343,10 +346,18 @@
 </footer>
 
 <script>
-  const io = new IntersectionObserver((es) => {
-    es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
-  }, { threshold: 0.18 });
-  document.querySelectorAll(".rv").forEach((el) => io.observe(el));
+  (function () {
+    const items = document.querySelectorAll(".rv");
+    const revealAll = () => items.forEach((el) => el.classList.add("in"));
+    if (!("IntersectionObserver" in window)) { revealAll(); return; }
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.18, rootMargin: "0px 0px -8% 0px" });
+    items.forEach((el) => io.observe(el));
+    // safety net: if something below the fold never gets scrolled into view
+    // (print preview, headless capture, tall desktop), reveal it after a beat
+    window.addEventListener("load", () => setTimeout(revealAll, 2500));
+  })();
 </script>
 </body>
 </html>

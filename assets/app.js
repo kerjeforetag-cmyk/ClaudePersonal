@@ -701,19 +701,48 @@
     ];
     let body = "";
     if (tab === "overview") {
-      const pulse = custView ? "" : `
-        <div class="card"><h3>Hub pulse <span class="badge neutral">internal</span></h3><p class="sub">Customer actions, last 30 days</p>
-          <div style="margin-top:14px">${sparkline(h.activity30d, 380, 56)}</div>
-          <div class="hub-meta" style="margin-top:12px">${healthBadge(h.health)}<span class="sub">${h.members} members · last active ${esc(h.lastActivity)}</span></div>
-        </div>`;
-      const tips = custView ? [] : computeInsights(h.id).slice(0, 2);
-      body = `<div class="grid ${custView ? "" : "cols-2"}">
-        <div class="card"><h3>About ${custView ? "this partnership" : "this customer"}</h3><p class="sub" style="margin-top:8px;font-size:13.5px;line-height:1.6">${esc(h.about)}</p></div>
-        ${pulse}
-      </div>
-      ${tips.length ? `<div class="card" style="margin-top:16px"><h3>Mimra suggests <span class="badge neutral">internal</span></h3>
-        ${tips.map((t) => `<div class="reason" style="margin-top:8px"><span><b>${esc(t.title)}</b> — ${esc(t.why)} <a href="${t.hash}" style="color:var(--accent-ink);font-weight:600">${esc(t.label)} →</a></span></div>`).join("")}
-      </div>` : ""}`;
+      const aboutCard = `<div class="card"><h3>About ${custView ? "this partnership" : "this customer"}</h3><p class="sub" style="margin-top:8px;font-size:13.5px;line-height:1.6">${esc(h.about)}</p></div>`;
+      if (custView) {
+        const ws = store.get("mimra.wsname") || (D.tenant && D.tenant.name) || "your supplier";
+        const plural = (n, u) => n + " " + u + (n === 1 ? "" : "s");
+        const index = [
+          ["prices", "€", "Your price list", plural(h.priceList.length, "product"), h.priceList.length],
+          ["docs", "▤", "Technical documents", plural(h.docs.length, "document"), h.docs.length],
+          ["proposals", "✎", "Proposals", plural(h.proposals.length, "proposal"), h.proposals.length],
+          ["decks", "▦", "Presentations", plural(h.presentations.length, "presentation"), h.presentations.length],
+        ];
+        const indexCard = `<div class="card"><h3>What's in your hub</h3>
+          <p class="sub" style="margin-top:4px">Shared by ${esc(ws)} — always the current version.</p>
+          <div style="margin-top:10px">${index.map(([t, ico, label, count, n]) => `
+            <a class="doc-row hub-link" href="#/hub/${h.id}/${t}">
+              <div class="doc-ico">${ico}</div>
+              <div style="flex:1"><b>${label}</b><span class="src">${n ? count : "Nothing shared yet"}</span></div>
+              <span class="hub-link-arrow" aria-hidden="true">→</span></a>`).join("")}</div></div>`;
+        const latest = (h.presentations || [])[0];
+        const latestCard = latest ? `<div class="card" style="margin-top:16px">
+          <div class="deck-result">
+            <div class="deck-thumb ${latest.tier === "Essential" ? "light" : ""}">${esc(latest.tier)}</div>
+            <div style="flex:1">
+              <span class="src" style="display:block;text-transform:uppercase;letter-spacing:.08em;font-size:11px">Latest presentation for you</span>
+              <b style="font-size:15px">${esc(latest.name)}</b>
+              <span class="src" style="display:block">Shared ${esc(latest.generated)}</span>
+              <div style="margin-top:10px">${latest.url
+                ? `<a class="btn primary sm" href="${esc(latest.url)}" target="_blank" rel="noopener">Open presentation ↗</a>`
+                : `<button class="btn primary sm" data-act="open-saved" data-i="0">Open presentation</button>`}</div>
+            </div></div></div>` : "";
+        body = `<div class="grid cols-2">${aboutCard}${indexCard}</div>${latestCard}`;
+      } else {
+        const pulse = `
+          <div class="card"><h3>Hub pulse <span class="badge neutral">internal</span></h3><p class="sub">Customer actions, last 30 days</p>
+            <div style="margin-top:14px">${sparkline(h.activity30d, 380, 56)}</div>
+            <div class="hub-meta" style="margin-top:12px">${healthBadge(h.health)}<span class="sub">${h.members} members · last active ${esc(h.lastActivity)}</span></div>
+          </div>`;
+        const tips = computeInsights(h.id).slice(0, 2);
+        body = `<div class="grid cols-2">${aboutCard}${pulse}</div>
+        ${tips.length ? `<div class="card" style="margin-top:16px"><h3>Mimra suggests <span class="badge neutral">internal</span></h3>
+          ${tips.map((t) => `<div class="reason" style="margin-top:8px"><span><b>${esc(t.title)}</b> — ${esc(t.why)} <a href="${t.hash}" style="color:var(--accent-ink);font-weight:600">${esc(t.label)} →</a></span></div>`).join("")}
+        </div>` : ""}`;
+      }
     } else if (tab === "prices") {
       const addBtn = custView ? "" : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" data-act="add-price">+ Add product</button></div>`;
       body = h.priceList.length ? `${addBtn}<div class="table-wrap"><table class="data">
