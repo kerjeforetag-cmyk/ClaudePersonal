@@ -261,6 +261,7 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
 
   /* ---------- Signature: full-bleed scroll deck ---------- */
   function signature(hub, objKey, accent, opts) {
+    const accentInk = (opts && opts.accentInk) || "#7c3a1e";
     const o = OBJ[objKey] || OBJ.proposal;
     const st = stats(hub);
     const mid = middleCards(hub, objKey);
@@ -326,7 +327,7 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
 <script>document.documentElement.className="js"</script>
 <style>
 :root{--paper:#f7f5ef;--card:#fcfcfb;--ink:#1a1915;--ink2:#52514e;--ink3:#898781;--line:#e3e1d8;
---accent:${accent};--accent-ink:#7c3a1e;--serif:"Charter","Iowan Old Style",Georgia,serif;
+--accent:${accent};--accent-ink:${accentInk};--serif:"Charter","Iowan Old Style",Georgia,serif;
 --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--ease:cubic-bezier(.22,.8,.3,1)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased}

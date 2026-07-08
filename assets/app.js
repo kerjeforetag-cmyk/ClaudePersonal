@@ -888,8 +888,10 @@
           const top = statDeck.slideStats.reduce((a, b) => (b[1] > a[1] ? b : a));
           if (/pric|number|commercial/i.test(top[0]) && top[1] / total >= 0.2) emphasis = "pricing";
         }
+        const accentKey = store.get("mimra.accent") || "terracotta";
         const built = window.MimraGen.buildDeck(hub, s.objective, s.tier, {
-          accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#c96442",
+          accent: (ACCENTS[accentKey] || ACCENTS.terracotta).accent,
+          accentInk: (ACCENTS[accentKey] || ACCENTS.terracotta).inkL,
           sender: { name: D.tenant.user.name, email: D.tenant.user.email },
           workspace: store.get("mimra.wsname") || D.tenant.name,
           references, emphasis
