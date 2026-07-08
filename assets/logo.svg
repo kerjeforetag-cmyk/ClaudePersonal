@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 88" width="320" height="88">
+  <!-- Mimra lockup: mark + wordmark. Wordmark set in Charter/Georgia serif, "ra" in terracotta. -->
+  <rect x="10" y="12" width="64" height="64" rx="16" fill="#c96442"/>
+  <path d="M26 57 V43 a8.5 8.5 0 0 1 17 0 V57 M43 57 V43 a8.5 8.5 0 0 1 17 0 V57"
+        fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="60" cy="29" r="4.4" fill="#ffffff"/>
+  <text x="90" y="66" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="56"
+        font-weight="600" letter-spacing="-1" fill="#1a1915">mim<tspan fill="#c96442">ra</tspan></text>
+</svg>
