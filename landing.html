@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Minra — the sales manager sells. Minra does the rest.</title>
+<title>Mimra — the sales manager sells. Mimra does the rest.</title>
 <meta name="description" content="Customer hubs, generated presentations and market intelligence for B2B sales teams. One hub per customer, decks in seconds, no seats." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23c96442'/><text x='50' y='68' font-size='56' font-family='Georgia' text-anchor='middle' fill='white'>m</text></svg>" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23c96442'/><path d='M16 45 V31 a8.5 8.5 0 0 1 17 0 V45 M33 45 V31 a8.5 8.5 0 0 1 17 0 V45' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/><circle cx='50' cy='17' r='4.4' fill='white'/></svg>" />
 <script>
   // honor the theme the visitor picked in the app (falls back to system)
-  try { var t = localStorage.getItem("minra.theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  try { var t = localStorage.getItem("mimra.theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 </script>
 <style>
   :root {
@@ -50,7 +50,8 @@
     backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
   }
   .nav-in { display: flex; align-items: center; gap: 28px; padding: 14px 24px; max-width: 1140px; margin: 0 auto; }
-  .wordmark { font-family: var(--serif); font-size: 26px; letter-spacing: -0.02em; text-decoration: none; }
+  .wordmark { font-family: var(--serif); font-size: 26px; letter-spacing: -0.02em; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; }
+  .mark-sm { width: 30px; height: 30px; display: block; flex: none; }
   .wordmark em { font-style: normal; color: var(--accent); }
   .nav-links { display: flex; gap: 22px; font-size: 14px; color: var(--ink-2); }
   .nav-links a { text-decoration: none; transition: color .2s; }
@@ -189,7 +190,7 @@
 
 <nav class="nav">
   <div class="nav-in">
-    <a class="wordmark" href="#top">min<em>ra</em></a>
+    <a class="wordmark" href="#top"><svg class="mark-sm" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="var(--accent)"/><path d="M16 45 V31 a8.5 8.5 0 0 1 17 0 V45 M33 45 V31 a8.5 8.5 0 0 1 17 0 V45" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="17" r="4.4" fill="#fff"/></svg><span>mim<em>ra</em></span></a>
     <div class="nav-links">
       <a href="#product">Product</a><a href="#studio">Studio</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
     </div>
@@ -203,7 +204,7 @@
   <div class="wrap hero-grid">
     <div>
       <div class="kicker rv">The B2B sales hub</div>
-      <h1 class="rv">The sales manager sells.<br />Minra does the rest.</h1>
+      <h1 class="rv">The sales manager sells.<br />Mimra does the rest.</h1>
       <p class="lede rv d1">One private hub per customer — prices, technical data, proposals and presentations that generate themselves. Plus the market intelligence to know where to be, when, and what to say.</p>
       <div class="cta-row rv d2">
         <a class="btn primary" href="index.html">Open the live demo →</a>
@@ -238,11 +239,11 @@
     <div class="sec-head rv">
       <div class="kicker">Why it exists</div>
       <h2>Sales managers lose their week to everything except selling.</h2>
-      <p>Slide decks, price sheets, market research, travel logistics, chasing email threads. Minra takes that work — so the hour with the customer is the best hour of everyone's week.</p>
+      <p>Slide decks, price sheets, market research, travel logistics, chasing email threads. Mimra takes that work — so the hour with the customer is the best hour of everyone's week.</p>
     </div>
     <div class="cols-3">
       <div class="card rv"><div class="pill-ico">🤝</div><h3>The hub</h3><p>A private gathering place per customer: their prices, technical documents, proposals and decks — always current, every view tracked. Invite the buying team with one link; they need no account.</p></div>
-      <div class="card rv d1"><div class="pill-ico">✨</div><h3>The studio</h3><p>Pick a customer, pick a goal, pick a tier — Minra composes an HTML presentation from live hub data in seconds. Opens anywhere, animates smoothly, prints clean.</p></div>
+      <div class="card rv d1"><div class="pill-ico">✨</div><h3>The studio</h3><p>Pick a customer, pick a goal, pick a tier — Mimra composes an HTML presentation from live hub data in seconds. Opens anywhere, animates smoothly, prints clean.</p></div>
       <div class="card rv d2"><div class="pill-ico">🧭</div><h3>The intelligence</h3><p>Next best actions computed from your pipeline. Win-likelihood on every deal. Territory news, verified competitor prices, travel windows scored day by day, and the people who decide.</p></div>
     </div>
   </div>
@@ -257,7 +258,7 @@
     <div class="cols-3">
       <div class="card rv"><div class="step-num">1</div><h3>Open a hub</h3><p>Create the customer's space, publish their prices, share the technical data. Send one link — the whole buying team is in.</p></div>
       <div class="card rv d1"><div class="step-num">2</div><h3>Generate the deck</h3><p>Proposal, introduction, renewal or tender — composed from the hub's own numbers, personalized down to the questions they asked.</p></div>
-      <div class="card rv d2"><div class="step-num">3</div><h3>Follow the signal</h3><p>Minra watches what they read, what the market does and where your time pays best — and tells you the next move each morning.</p></div>
+      <div class="card rv d2"><div class="step-num">3</div><h3>Follow the signal</h3><p>Mimra watches what they read, what the market does and where your time pays best — and tells you the next move each morning.</p></div>
     </div>
   </div>
 </section>
@@ -267,7 +268,7 @@
     <div class="band amb">
       <div class="kicker rv">The studio</div>
       <h2 class="rv">Presentations your customers remember — generated, not assembled.</h2>
-      <p class="rv d1">These three decks were produced by Minra for fictional customers. Open them. This is the bar.</p>
+      <p class="rv d1">These three decks were produced by Mimra for fictional customers. Open them. This is the bar.</p>
       <div class="deck-links">
         <a class="deck-link rv d1" href="presentations/mueller-signature.html" target="_blank" rel="noopener"><b>Fleet electrification proposal</b><span>Signature · full-bleed scroll deck with live TCO chart</span></a>
         <a class="deck-link rv d2" href="presentations/kowalski-intro-signature.html" target="_blank" rel="noopener"><b>Company introduction</b><span>Signature · composed for a greenfield logistics customer</span></a>
@@ -315,7 +316,7 @@
 <section id="faq" style="padding-top:10px">
   <div class="wrap" style="max-width:820px">
     <div class="sec-head rv"><div class="kicker">FAQ</div><h2>Fair questions.</h2></div>
-    <details class="rv"><summary>Do my customers need a Minra account?</summary><p>No. You send one link; it opens their hub in a customer view — prices, documents, proposals and decks, nothing internal. They can even build a quote and request it as a proposal.</p></details>
+    <details class="rv"><summary>Do my customers need a Mimra account?</summary><p>No. You send one link; it opens their hub in a customer view — prices, documents, proposals and decks, nothing internal. They can even build a quote and request it as a proposal.</p></details>
     <details class="rv"><summary>What format are the presentations?</summary><p>Standalone HTML files. They open in any browser, animate smoothly, work offline once loaded, and print cleanly to PDF. No PowerPoint, no plugins, nothing to install.</p></details>
     <details class="rv"><summary>Which industries does it fit?</summary><p>Any business-to-business sale with real products, real prices and real relationships — industrial equipment, components, software, services. The demo tenant sells battery systems; swap the data and it's yours.</p></details>
     <details class="rv"><summary>What's the difference between Essential and Signature decks?</summary><p>Essential is a clean, fast template filled from your hub data — included in the plan. Signature composes the deck for that specific customer: narrative, charts and layout built around their numbers and even the questions they asked in the hub. It's the one you close with.</p></details>
@@ -334,8 +335,8 @@
 
 <footer>
   <div class="wrap foot-in">
-    <a class="wordmark" style="font-size:20px" href="#top">min<em>ra</em></a>
-    <span>app.minra.se · the B2B sales hub</span>
+    <a class="wordmark" style="font-size:20px" href="#top"><span>mim<em>ra</em></span></a>
+    <span>app.mimra.se · the B2B sales hub</span>
     <span class="grow"></span>
     <span>Product demo — all companies and data are fictional.</span>
   </div>

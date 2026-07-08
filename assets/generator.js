@@ -1,5 +1,5 @@
 /* ============================================================
-   Minra — deck generator
+   Mimra — deck generator
    Builds complete, standalone HTML presentations from hub data.
    Essential = clean template document. Signature = full-bleed
    scroll deck with reveal motion. Both are self-contained files.
@@ -11,7 +11,7 @@
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const eur = (n) => "€" + Number(n).toLocaleString("en-US");
 
-  const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23c96442'/><text x='50' y='68' font-size='56' font-family='Georgia' text-anchor='middle' fill='white'>m</text></svg>" />`;
+  const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23c96442'/><path d='M16 45 V31 a8.5 8.5 0 0 1 17 0 V45 M33 45 V31 a8.5 8.5 0 0 1 17 0 V45' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/><circle cx='50' cy='17' r='4.4' fill='white'/></svg>" />`;
 
   // objective-specific middle sections (cards used by both tiers)
   function middleCards(hub, objKey) {
@@ -91,11 +91,11 @@
       <td class="num strike">${eur(p.list)}</td><td class="num"><b>${eur(p.hub)}</b></td><td class="num">${p.moq}</td></tr>`).join("");
     return `
     <h2>Your hub pricing</h2>
-    <p>Customer-specific rates as published in your Minra hub — not list prices.</p>
+    <p>Customer-specific rates as published in your Mimra hub — not list prices.</p>
     <div class="table-scroll"><table>
       <thead><tr><th>SKU</th><th>Product</th><th class="num">List</th><th class="num">Your price</th><th class="num">MOQ</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="fine">Valid Q3 2026 · full commercial terms in your Minra hub.</p>`;
+    <p class="fine">Valid Q3 2026 · full commercial terms in your Mimra hub.</p>`;
   }
 
   const MIDDLE_TITLE = { proposal: "How the rollout lands", intro: "What we make", renewal: "What phase one proved", tender: "Why this bid holds" };
@@ -141,10 +141,10 @@ footer{margin-top:60px;font-size:12px;color:var(--ink3);text-align:center}footer
 @media print{.btn{display:none}}
 </style></head><body><div class="page">
 <header>
-  <div class="brand">NordCell Power <span style="color:var(--ink3)">· prepared with</span> <em>minra</em></div>
+  <div class="brand">NordCell Power <span style="color:var(--ink3)">· prepared with</span> <em>mimra</em></div>
   <h1>${esc(o.name)}\n${esc(hub.company)}</h1>
   <div class="meta"><div><b>For</b> ${esc(hub.contact)}, ${esc(hub.contactRole)}</div>
-  <div><b>From</b> Alex Kjellberg, NordCell Power AB</div><div><b>Generated</b> from your Minra hub</div></div>
+  <div><b>From</b> Alex Kjellberg, NordCell Power AB</div><div><b>Generated</b> from your Mimra hub</div></div>
 </header>
 <h2>Summary</h2>
 <p>${esc(o.lede(hub))}</p>
@@ -155,10 +155,10 @@ ${hubQuote(hub)}
 <div class="stats">${mid.map((c) => `<div class="stat"><b style="font-size:16px">${esc(c.t)}</b><span style="font-size:13px;color:var(--ink2)">${esc(c.p)}</span></div>`).join("")}</div>
 ${priceTable(hub)}
 <h2>How we work</h2>
-<p>Everything in this document lives in your shared Minra hub — prices, technical data and every answer, visible to your whole team. Questions land with all of us, not one inbox.</p>
+<p>Everything in this document lives in your shared Mimra hub — prices, technical data and every answer, visible to your whole team. Questions land with all of us, not one inbox.</p>
 <div class="cta-box"><b>Next step:</b> ${esc(o.cta)} — reply in your hub or book directly.<br/>
 <a class="btn" href="mailto:alex@nordcell.se?subject=${encodeURIComponent(o.name + " — " + hub.company)}">${esc(o.cta)}</a></div>
-<footer>Generated with <em>minra</em> Essential · content sourced live from your customer hub</footer>
+<footer>Generated with <em>mimra</em> Essential · content sourced live from your customer hub</footer>
 </div>${printBtn(accent)}</body></html>`;
   }
 
@@ -228,7 +228,7 @@ h2 + p, .sig-p{color:var(--ink2)}
     <div class="cover-meta rv d2">
       <div><b>Prepared for</b> ${esc(hub.contact)}, ${esc(hub.contactRole)}</div>
       <div><b>Prepared by</b> Alex Kjellberg, NordCell Power AB</div>
-      <div><b>Source</b> your Minra hub, live data</div>
+      <div><b>Source</b> your Mimra hub, live data</div>
     </div>
   </div>
 </section>
@@ -261,9 +261,9 @@ ${priceTable(hub) ? `<section><div class="inner"><div class="kicker rv">Commerci
   <div class="inner">
     <div class="kicker rv" style="color:#e9b18f">Next step</div>
     <h2 class="rv">${esc(o.cta)}.</h2>
-    <p class="lede rv d1">Reply in your Minra hub — every question lands with the whole team — or book directly with ${esc(hub.contact.split(" ")[0])}'s calendar in mind.</p>
+    <p class="lede rv d1">Reply in your Mimra hub — every question lands with the whole team — or book directly with ${esc(hub.contact.split(" ")[0])}'s calendar in mind.</p>
     <a class="cta rv d2" href="mailto:alex@nordcell.se?subject=${encodeURIComponent(o.name + " — " + hub.company)}">${esc(o.cta)} →</a>
-    <div class="made-by rv d2">Composed for ${esc(hub.company)} · generated with <em>minra</em> Signature</div>
+    <div class="made-by rv d2">Composed for ${esc(hub.company)} · generated with <em>mimra</em> Signature</div>
   </div>
 </section>
 
@@ -275,7 +275,7 @@ document.querySelectorAll("section").forEach(function(s){io.observe(s)})})();
 </body></html>`;
   }
 
-  window.MinraGen = {
+  window.MimraGen = {
     buildDeck: (hub, objKey, tierKey, opts) => {
       const accent = (opts && opts.accent) || "#c96442";
       return tierKey === "signature" ? signature(hub, objKey, accent) : essential(hub, objKey, accent);

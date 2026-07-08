@@ -1,11 +1,11 @@
 /* ============================================================
-   Minra — application
+   Mimra — application
    Hash-routed SPA. No dependencies, no build step.
    ============================================================ */
 
 (function () {
   "use strict";
-  const D = window.MINRA;
+  const D = window.MIMRA;
   const $ = (sel, el) => (el || document).querySelector(sel);
   const view = $("#view");
 
@@ -31,6 +31,17 @@
     del(k) { try { sessionStorage.removeItem(k); } catch (e) { delete this._m[k]; } }
   };
 
+  // one-time migration: the product was briefly named "minra" — carry saved data over
+  try {
+    [localStorage, sessionStorage].forEach((st) => {
+      Object.keys(st).filter((k) => k.indexOf("minra.") === 0).forEach((k) => {
+        const nk = "mimra." + k.slice(6);
+        if (st.getItem(nk) === null) st.setItem(nk, st.getItem(k));
+        st.removeItem(k);
+      });
+    });
+  } catch (e) { /* sandboxed */ }
+
   function toast(msg) {
     const t = $("#toast");
     t.textContent = msg;
@@ -43,11 +54,11 @@
   (() => {
     // migrate pre-v4 custom hubs, then load the working dataset if one exists
     try {
-      const legacy = JSON.parse(store.get("minra.hubs.custom") || "[]");
+      const legacy = JSON.parse(store.get("mimra.hubs.custom") || "[]");
       legacy.forEach((h) => { if (!D.hubs.some((x) => x.id === h.id)) D.hubs.push(h); });
     } catch (e) { /* ignore */ }
     try {
-      const saved = JSON.parse(store.get("minra.data.v1") || "null");
+      const saved = JSON.parse(store.get("mimra.data.v1") || "null");
       if (saved) {
         ["hubs", "people", "competitors"].forEach((k) => { if (Array.isArray(saved[k])) D[k] = saved[k]; });
         if (Array.isArray(saved.members)) D.tenant.members = saved.members;
@@ -73,7 +84,7 @@
     if (!Array.isArray(D.competitors)) D.competitors = [];
   }
   function persist() {
-    store.set("minra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members }));
+    store.set("mimra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members }));
   }
 
   // each accent carries light + dark variants; CSS resolves via --acc-* indirection
@@ -89,9 +100,9 @@
     r.setProperty("--acc", a.accent); r.setProperty("--acc-strong", a.strong);
     r.setProperty("--acc-soft-l", a.softL); r.setProperty("--acc-soft-d", a.softD);
     r.setProperty("--acc-ink-l", a.inkL); r.setProperty("--acc-ink-d", a.inkD);
-    store.set("minra.accent", key);
+    store.set("mimra.accent", key);
   }
-  applyAccent(store.get("minra.accent") || "terracotta");
+  applyAccent(store.get("mimra.accent") || "terracotta");
 
   /* ---------- theme (system / light / dark) ---------- */
   function isDark() {
@@ -102,10 +113,10 @@
   function applyTheme(pref) {
     if (pref === "light" || pref === "dark") {
       document.documentElement.dataset.theme = pref;
-      store.set("minra.theme", pref);
+      store.set("mimra.theme", pref);
     } else {
       delete document.documentElement.dataset.theme;
-      store.del("minra.theme");
+      store.del("mimra.theme");
     }
     const tb = $("#theme-btn");
     if (tb) {
@@ -115,7 +126,7 @@
       tb.setAttribute("aria-pressed", String(isDark()));
     }
   }
-  applyTheme(store.get("minra.theme") || "");
+  applyTheme(store.get("mimra.theme") || "");
   try {
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
       if (!document.documentElement.dataset.theme) { applyTheme(""); render(); }
@@ -277,12 +288,12 @@
 
   /* ---------- help notes ---------- */
   const HELP = {
-    dashboard: ["Your day, already sorted", "Minra pulls your pipeline, hub activity, market news and travel into one morning view — so you start with the three things that move revenue, not with admin."],
+    dashboard: ["Your day, already sorted", "Mimra pulls your pipeline, hub activity, market news and travel into one morning view — so you start with the three things that move revenue, not with admin."],
     hubs: ["What is a hub?", "A hub is a private space you share with one customer: their prices, technical documents, proposals and generated presentations. You invite the buying team — everyone sees the same, always-current facts."],
     hub: ["What your customer sees", "Everything in this hub is visible to the invited customer team, except tabs marked internal. Prices here override list prices. Every view and download is tracked in Activity."],
     studio: ["Two ways to generate", "Essential decks are template-based and included in your plan — fast and on-brand. Signature decks are code-generated: layout, charts and narrative composed specifically for this customer. Both are HTML — they open anywhere, animate smoothly and print clean."],
     flow: ["News that follows your territories", "Market Flow watches the regions you sell in and surfaces only what affects your accounts: regulation, tenders, fairs and market moves. Tap a territory to focus."],
-    travel: ["Why these days?", "Minra scores every day by customer availability, trade fairs and tenders nearby, flight-price index and weather — then recommends the window where one trip does the most work."],
+    travel: ["Why these days?", "Mimra scores every day by customer availability, trade fairs and tenders nearby, flight-price index and weather — then recommends the window where one trip does the most work."],
     pricing: ["Verified vs estimated", "A Verified price was actually seen — a tender award, a distributor list, a quote a customer shared. An Estimated OEM price is our model of what the competitor charges OEMs when no document exists. Never mix them up in a negotiation."],
     people: ["Know who matters before you land", "The people who decide, influence or block your deals — per country, with how they work and where to meet them. Add your own notes after every meeting."],
     settings: ["Make it yours", "Branding flows into every hub and generated deck. The plan is simple on purpose: one monthly price, Essential decks included, Signature decks pay-as-you-go — no seats, no tiers."],
@@ -290,7 +301,7 @@
     forecast: ["Revenue you can plan around", "Every open deal lands in its expected close month, weighted by win likelihood. Best case is everything; expected is what the math says; commit is only deals above 70% likely."]
   };
   function helpNote(key) {
-    if (store.get("minra.hn." + key) === "off") return "";
+    if (store.get("mimra.hn." + key) === "off") return "";
     const [t, b] = HELP[key];
     return `<div class="help-note" data-hn="${key}">
       <div class="hn-ico">?</div>
@@ -359,7 +370,7 @@
     return items.slice(0, 8);
   }
   function refreshNotifDot() {
-    const seen = store.get("minra.notif.seen") || "";
+    const seen = store.get("mimra.notif.seen") || "";
     notifDot.hidden = !notifItems().some((i) => i.when > seen);
   }
   notifBtn.addEventListener("click", (e) => {
@@ -371,7 +382,7 @@
         <b>${esc(i.who)}</b> — ${esc(i.what)}<span class="src">${esc(i.hub.company)} · ${esc(i.when)}</span></button>`).join("") ||
         `<div class="sr-empty">No activity yet.</div>`);
     notifPanel.hidden = false;
-    if (items[0]) store.set("minra.notif.seen", items[0].when);
+    if (items[0]) store.set("mimra.notif.seen", items[0].when);
     refreshNotifDot();
   });
   document.addEventListener("click", (e) => {
@@ -546,9 +557,9 @@
 
   /* ---------- travel calendar export ---------- */
   function downloadICS(trip) {
-    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Minra//Travel//EN"];
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mimra//Travel//EN"];
     trip.meetings.forEach((m, i) => {
-      lines.push("BEGIN:VEVENT", "UID:minra-" + trip.id + "-" + i + "@minra.app",
+      lines.push("BEGIN:VEVENT", "UID:mimra-" + trip.id + "-" + i + "@mimra.app",
         "DTSTART:" + m.dtStart, "DTEND:" + m.dtEnd,
         "SUMMARY:" + m.who.replace(/,/g, "\\,"),
         "DESCRIPTION:" + m.note.replace(/,/g, "\\,"),
@@ -700,7 +711,7 @@
         <div class="card"><h3>About ${custView ? "this partnership" : "this customer"}</h3><p class="sub" style="margin-top:8px;font-size:13.5px;line-height:1.6">${esc(h.about)}</p></div>
         ${pulse}
       </div>
-      ${tips.length ? `<div class="card" style="margin-top:16px"><h3>Minra suggests <span class="badge neutral">internal</span></h3>
+      ${tips.length ? `<div class="card" style="margin-top:16px"><h3>Mimra suggests <span class="badge neutral">internal</span></h3>
         ${tips.map((t) => `<div class="reason" style="margin-top:8px"><span><b>${esc(t.title)}</b> — ${esc(t.why)} <a href="${t.hash}" style="color:var(--accent-ink);font-weight:600">${esc(t.label)} →</a></span></div>`).join("")}
       </div>` : ""}`;
     } else if (tab === "prices") {
@@ -860,12 +871,12 @@
     const tick = () => {
       if (i < steps.length) {
         $("#gen-status").textContent = steps[i];
-        $("#gen-log").textContent = "minra compose · " + tier.name.toLowerCase() + " · step " + (i + 1) + "/" + steps.length;
+        $("#gen-log").textContent = "mimra compose · " + tier.name.toLowerCase() + " · step " + (i + 1) + "/" + steps.length;
         i++; setTimeout(tick, stepT);
       } else {
         const objName = D.studio.objectives.find((o) => o.id === s.objective).name;
         lastDeck = {
-          html: window.MinraGen.buildDeck(hub, s.objective, s.tier, {
+          html: window.MimraGen.buildDeck(hub, s.objective, s.tier, {
             accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#c96442"
           }),
           title: hub.company + " — " + objName + " · " + tier.name
@@ -1119,8 +1130,8 @@
 
   /* ---------- settings ---------- */
   function vSettings() {
-    const accentKey = store.get("minra.accent") || "terracotta";
-    const ws = store.get("minra.wsname") || D.tenant.name;
+    const accentKey = store.get("mimra.accent") || "terracotta";
+    const ws = store.get("mimra.wsname") || D.tenant.name;
     const integrations = [
       { k: "crm", name: "CRM sync", desc: "HubSpot / Pipedrive — hubs and stages stay in sync" },
       { k: "erp", name: "ERP export", desc: "Orders and price lists to your ERP (SAP, Monitor, Fortnox)" },
@@ -1141,7 +1152,7 @@
         <label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-top:18px">Theme</label>
         <div class="chips" style="margin-top:8px">
           ${[["", "System"], ["light", "Light"], ["dark", "Dark"]].map(([v, l]) =>
-            `<button class="chip ${(store.get("minra.theme") || "") === v ? "on" : ""}" data-theme-pick="${v}">${l}</button>`).join("")}
+            `<button class="chip ${(store.get("mimra.theme") || "") === v ? "on" : ""}" data-theme-pick="${v}">${l}</button>`).join("")}
         </div>
       </div>
       <div class="card">
@@ -1164,7 +1175,7 @@
         <div class="field"><label>Email</label><input value="${esc(D.tenant.user.email || "alex@nordcell.se")}" readonly style="color:var(--ink-3)" /></div>
         <div class="int-row" style="border-bottom:0;padding-bottom:0">
           <div class="grow"><b>Two-factor authentication</b><span class="src">Sign-ins require a code from your phone</span></div>
-          <div class="toggle ${store.get("minra.2fa") === "on" ? "on" : ""}" data-2fa role="switch" aria-checked="${store.get("minra.2fa") === "on"}" tabindex="0"></div>
+          <div class="toggle ${store.get("mimra.2fa") === "on" ? "on" : ""}" data-2fa role="switch" aria-checked="${store.get("mimra.2fa") === "on"}" tabindex="0"></div>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px">
           <button class="btn ghost sm" data-act="demo">Change password</button>
@@ -1186,9 +1197,9 @@
         <button class="btn ghost sm" data-act="add-member" style="margin-top:12px">+ Invite teammate</button>
       </div>
       <div class="card">
-        <h3>Integrations</h3><p class="sub">Minra plays well with what you already run.</p>
+        <h3>Integrations</h3><p class="sub">Mimra plays well with what you already run.</p>
         ${integrations.map((i) => {
-          const on = store.get("minra.int." + i.k) === "on";
+          const on = store.get("mimra.int." + i.k) === "on";
           return `<div class="int-row"><div class="grow"><b>${esc(i.name)}</b><span class="src">${esc(i.desc)}</span></div>
             <div class="toggle ${on ? "on" : ""}" data-int="${i.k}" role="switch" aria-checked="${on}" tabindex="0"></div></div>`;
         }).join("")}
@@ -1226,7 +1237,7 @@
       const tab = parts[0] === "hub" && parts[1] === lockedCustomer ? parts[2] : undefined;
       const h = D.hubs.find((x) => x.id === lockedCustomer);
       view.innerHTML = `<div class="view">${vHub(lockedCustomer, tab)}</div>`;
-      $("#crumb").innerHTML = `<b>${esc(h.company)}</b> <span style="color:var(--ink-3)">· shared by NordCell Power · powered by <b style="font-family:var(--serif)">min<span style="color:var(--accent)">ra</span></b></span>`;
+      $("#crumb").innerHTML = `<b>${esc(h.company)}</b> <span style="color:var(--ink-3)">· shared by NordCell Power · powered by <b style="font-family:var(--serif)">mim<span style="color:var(--accent)">ra</span></b></span>`;
       window.scrollTo({ top: 0, behavior: "instant" });
       return;
     }
@@ -1251,7 +1262,7 @@
   /* ---------- events ---------- */
   document.addEventListener("click", (e) => {
     const hn = e.target.closest("[data-hn-close]");
-    if (hn) { store.set("minra.hn." + hn.dataset.hnClose, "off"); hn.closest(".help-note").remove(); return; }
+    if (hn) { store.set("mimra.hn." + hn.dataset.hnClose, "off"); hn.closest(".help-note").remove(); return; }
 
     const pick = e.target.closest("[data-pick]");
     if (pick) { studioState[pick.dataset.pick] = pick.dataset.val; render(); return; }
@@ -1266,7 +1277,7 @@
 
     const tr = e.target.closest("[data-tour]");
     if (tr) {
-      store.set("minra.toured", "1");
+      store.set("mimra.toured", "1");
       closeModal();
       if (tr.dataset.tour) { location.hash = tr.dataset.tour; render(); }
       return;
@@ -1280,8 +1291,8 @@
 
     const tfa = e.target.closest("[data-2fa]");
     if (tfa) {
-      const on = store.get("minra.2fa") === "on";
-      store.set("minra.2fa", on ? "off" : "on");
+      const on = store.get("mimra.2fa") === "on";
+      store.set("mimra.2fa", on ? "off" : "on");
       tfa.classList.toggle("on", !on);
       tfa.setAttribute("aria-checked", String(!on));
       toast(on ? "Two-factor disabled." : "Two-factor enabled — codes via your authenticator app.");
@@ -1290,7 +1301,7 @@
 
     const tg = e.target.closest("[data-int]");
     if (tg) {
-      const k = "minra.int." + tg.dataset.int;
+      const k = "mimra.int." + tg.dataset.int;
       const on = store.get(k) === "on";
       store.set(k, on ? "off" : "on");
       tg.classList.toggle("on", !on);
@@ -1313,9 +1324,9 @@
         return;
       }
       if (a === "reset-demo") {
-        ["minra.data.v1", "minra.hubs.custom", "minra.accent", "minra.wsname", "minra.notif.seen", "minra.toured", "minra.username", "minra.2fa", "minra.theme"].forEach((k) => store.del(k));
-        Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
-        ["crm", "erp", "wms", "cal"].forEach((k) => store.del("minra.int." + k));
+        ["mimra.data.v1", "mimra.hubs.custom", "mimra.accent", "mimra.wsname", "mimra.notif.seen", "mimra.toured", "mimra.username", "mimra.2fa", "mimra.theme"].forEach((k) => store.del(k));
+        Object.keys(HELP).forEach((k) => store.del("mimra.hn." + k));
+        ["crm", "erp", "wms", "cal"].forEach((k) => store.del("mimra.int." + k));
         toast("Demo data reset.");
         setTimeout(() => location.reload(), 600);
         return;
@@ -1363,7 +1374,7 @@
       if (a === "add-member") { FORMS.member(); return; }
       if (a === "del-member") { D.tenant.members.splice(+act.dataset.i, 1); persist(); render(); toast("Teammate removed."); return; }
       if (a === "sign-out") {
-        session.del("minra.auth");
+        session.del("mimra.auth");
         location.hash = "#/dashboard";
         login.classList.remove("gone");
         toast("Signed out.");
@@ -1411,9 +1422,9 @@
         const payload = {
           version: 1, exported: new Date().toISOString(),
           data: { hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members },
-          branding: { accent: store.get("minra.accent"), wsname: store.get("minra.wsname"), theme: store.get("minra.theme"), username: store.get("minra.username") }
+          branding: { accent: store.get("mimra.accent"), wsname: store.get("mimra.wsname"), theme: store.get("mimra.theme"), username: store.get("mimra.username") }
         };
-        if (downloadFile("minra-workspace-" + today() + ".json", JSON.stringify(payload, null, 2), "application/json")) toast("Workspace exported as JSON.");
+        if (downloadFile("mimra-workspace-" + today() + ".json", JSON.stringify(payload, null, 2), "application/json")) toast("Workspace exported as JSON.");
         return;
       }
       if (a === "import-data") { $("#import-file").click(); return; }
@@ -1436,12 +1447,12 @@
   document.addEventListener("input", (e) => {
     if (e.target.id === "ws-name") {
       const v = e.target.value.trim() || D.tenant.name;
-      store.set("minra.wsname", v);
+      store.set("mimra.wsname", v);
       $(".logo-sub").textContent = v.toUpperCase();
     }
     if (e.target.id === "acc-name") {
       const v = e.target.value.trim() || "Alex Kjellberg";
-      store.set("minra.username", v);
+      store.set("mimra.username", v);
       D.tenant.user.name = v;
       D.tenant.user.initials = v.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
       $("#user-name").textContent = v;
@@ -1480,7 +1491,7 @@
   });
 
   $("#help-toggle").addEventListener("click", () => {
-    Object.keys(HELP).forEach((k) => store.del("minra.hn." + k));
+    Object.keys(HELP).forEach((k) => store.del("mimra.hn." + k));
     render();
     toast("Help notes restored on every page.");
   });
@@ -1497,12 +1508,12 @@
       const ok = d && Array.isArray(d.hubs) && d.hubs.every((h) => h && typeof h === "object" && h.id) &&
         (d.people === undefined || Array.isArray(d.people)) &&
         (d.competitors === undefined || Array.isArray(d.competitors));
-      if (!ok) { toast("That file isn't a Minra workspace export."); return; }
+      if (!ok) { toast("That file isn't a Mimra workspace export."); return; }
       if (!confirm("Import will replace your current workspace (" + D.hubs.length + " hubs) with this file. Export first if you want a backup. Continue?")) return;
-      store.set("minra.data.v1", JSON.stringify(d));
+      store.set("mimra.data.v1", JSON.stringify(d));
       const b = payload.branding || {};
       ["accent", "wsname", "theme", "username"].forEach((k) => {
-        if (b[k]) store.set("minra." + k, b[k]); else store.del("minra." + k);
+        if (b[k]) store.set("mimra." + k, b[k]); else store.del("mimra." + k);
       });
       toast("Workspace imported — reloading.");
       setTimeout(() => location.reload(), 700);
@@ -1513,9 +1524,9 @@
 
   /* ---------- first-run tour ---------- */
   function maybeTour() {
-    if (lockedCustomer || store.get("minra.toured") || !modalWrap.hidden) return;
+    if (lockedCustomer || store.get("mimra.toured") || !modalWrap.hidden) return;
     openModal(`
-      <h3>Welcome to Minra</h3>
+      <h3>Welcome to Mimra</h3>
       <p class="sub">Three places do most of the work. Pick where to start — you can't break anything, and Settings can reset the demo anytime.</p>
       <div class="pick" data-tour="#/dashboard" style="margin-bottom:10px"><b>1 · See your day</b><p>Pipeline, next best actions, market news and travel in one morning view.</p></div>
       <div class="pick" data-tour="#/hub/mueller" style="margin-bottom:10px"><b>2 · Open a customer hub</b><p>The prices, documents, proposals and decks you share with one customer.</p></div>
@@ -1526,16 +1537,16 @@
   /* ---------- login ---------- */
   const login = $("#login");
   function enter() {
-    session.set("minra.auth", "1");
+    session.set("mimra.auth", "1");
     login.classList.add("gone");
     setTimeout(maybeTour, 650);
   }
   $("#login-btn").addEventListener("click", enter);
   login.addEventListener("keydown", (e) => { if (e.key === "Enter") enter(); });
-  if (session.get("minra.auth")) { login.classList.add("gone"); setTimeout(maybeTour, 600); }
+  if (session.get("mimra.auth")) { login.classList.add("gone"); setTimeout(maybeTour, 600); }
 
   /* ---------- boot ---------- */
-  const savedName = store.get("minra.username");
+  const savedName = store.get("mimra.username");
   if (savedName) {
     D.tenant.user.name = savedName;
     D.tenant.user.initials = savedName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -1544,7 +1555,7 @@
   $("#user-avatar").textContent = u.initials;
   $("#user-name").textContent = u.name;
   $("#user-role").textContent = u.role;
-  const wsn = store.get("minra.wsname");
+  const wsn = store.get("mimra.wsname");
   if (wsn) $(".logo-sub").textContent = wsn.toUpperCase();
   if (lockedCustomer) {
     document.body.classList.add("customer-mode");

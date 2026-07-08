@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Mimra mark: the hub "m" — two arches (seller & customer, gathered) + the spark of activity -->
+  <rect width="64" height="64" rx="16" fill="#c96442"/>
+  <path d="M16 45 V31 a8.5 8.5 0 0 1 17 0 V45 M33 45 V31 a8.5 8.5 0 0 1 17 0 V45"
+        fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="17" r="4.4" fill="#ffffff"/>
+</svg>

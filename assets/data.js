@@ -1,11 +1,11 @@
 /* ============================================================
-   Minra — demo dataset
+   Mimra — demo dataset
    Fictional tenant: NordCell Power AB (industrial battery systems)
    All companies, people, prices and news items are invented for
-   the product demo. Replace with live data via the Minra API.
+   the product demo. Replace with live data via the Mimra API.
    ============================================================ */
 
-window.MINRA = {
+window.MIMRA = {
 
   tenant: {
     name: "NordCell Power AB",

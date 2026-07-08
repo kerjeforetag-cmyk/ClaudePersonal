@@ -1,5 +1,5 @@
 /* ============================================================
-   Minra — design system
+   Mimra — design system
    Warm, bold, fluent. Ink on ivory, terracotta accent,
    serif display voice, ambient motion that never shouts.
    ============================================================ */
@@ -156,8 +156,11 @@ h1,h2,h3,.display { font-family: var(--serif); font-weight: 600; letter-spacing:
 .logo {
   font-family: var(--serif); font-size: 26px; letter-spacing: -0.02em;
   padding: 4px 12px 2px; color: #fff;
+  display: flex; align-items: center; gap: 9px;
 }
 .logo em { font-style: normal; color: var(--accent); }
+.logo-mark { width: 26px; height: 26px; flex: none; }
+.login-mark { width: 56px; height: 56px; margin: 0 auto 14px; display: block; filter: drop-shadow(0 8px 20px rgba(201,100,66,.35)); }
 .logo-sub { font-size: 11px; color: #a5a294; padding: 0 12px 18px; letter-spacing: .04em; }
 
 .nav-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: #8a8779; padding: 14px 12px 6px; }
