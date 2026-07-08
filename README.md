@@ -52,7 +52,7 @@ polished HTML presentation from your live data. Two tiers keep the economics hon
 - **Forecast** — every open deal lands in its expected close month at value × win likelihood; best case / expected / commit totals and a monthly revenue chart
 - **Deck engagement analytics** — per-section viewing time on shared decks, with the dominant section called out ("the tell") and fed into Next best actions
 - **First-run tour** — a three-door welcome on first sign-in (see your day / open a hub / generate a deck)
-- **Landing page** — `landing.html`: the public face (product, studio showcase, pricing, FAQ) linking into the app and the example decks
+- **Landing page** — `index.html`: the public face (product, studio showcase, pricing, FAQ); the app lives at `app.html`
 - **Account & admin** — editable display name (live everywhere), 2FA toggle, sign out; team management with invites, role changes and removal, all persisted
 - **Objective-aware decks** — generated presentations now carry a middle act per objective (rollout plan / product trio / phase-one results from real hub history / compliance evidence) and wear the workspace accent color
 - **Dark mode** — full token-level theming (app + landing): follows the system by default, with a topbar toggle and a System/Light/Dark picker in Settings; chart palettes re-validated against the dark surface; accents carry light and dark variants
@@ -67,7 +67,8 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-Or just open `index.html` in a browser. Sign in with any credentials (demo workspace).
+The landing page is `index.html`; the app is `app.html` (sign in with any credentials — demo workspace).
+Pushes to the default branch auto-deploy to GitHub Pages via `.github/workflows/pages.yml`.
 
 Generated presentation examples (what the Studio produces):
 
@@ -78,12 +79,15 @@ Generated presentation examples (what the Studio produces):
 ## Structure
 
 ```
-index.html                        app shell (login, sidebar, topbar, overlays)
+index.html                        public landing page (marketing)
+app.html                          app shell (login, sidebar, topbar, overlays)
 assets/styles.css                 design system — ink on ivory, terracotta accent, ambient motion
 assets/app.js                     hash-routed SPA: views, charts, search, settings, notifications
 assets/generator.js               deck generator — hub data → standalone HTML presentations
 assets/data.js                    demo dataset (fictional tenant: NordCell Power AB)
+assets/logo.svg / logo-mark.svg   the Mimra identity
 presentations/*.html              hand-polished deck examples (self-contained files)
+.github/workflows/pages.yml       GitHub Pages deployment
 ```
 
 Design notes: chart colors follow a CVD-validated palette (categorical + sequential ramps),
