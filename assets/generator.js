@@ -16,41 +16,198 @@
   const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23c96442'/><path d='M16 45 V31 a8.5 8.5 0 0 1 17 0 V45 M33 45 V31 a8.5 8.5 0 0 1 17 0 V45' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/><circle cx='50' cy='17' r='4.4' fill='white'/></svg>" />`;
 
   const OBJ = {
-    proposal: {
-      name: "Commercial proposal",
-      headline: (h) => `A proposal ${h.company.split(" ")[0]} can measure.`,
-      lede: (h) => `Scope, pricing and rollout for ${h.company} — built from your hub data, priced at your hub rates, ready to decide on.`,
-      cta: "Walk through it together"
+    proposal: { name: "Commercial proposal", cta: "Walk through it together" },
+    intro: { name: "Company introduction", cta: "Book a first meeting" },
+    renewal: { name: "Renewal & expansion", cta: "Plan the next phase" },
+    tender: { name: "Tender response", cta: "Review the compliance annex" }
+  };
+
+  /* ============================================================
+     Customer intelligence — derive a profile from the hub's own
+     data, then compose copy specific to THIS customer. Two
+     customers with the same objective get visibly different decks.
+     ============================================================ */
+
+  const numOf = (s) => { const m = String(s).replace(/,/g, "").match(/(\d+)/); return m ? +m[1] : null; };
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+  function deriveProfile(hub) {
+    const about = hub.about || "";
+    const text = ((hub.industry || "") + " " + about).toLowerCase();
+
+    let category = "general";
+    if (/forklift|intralogist/.test(text)) category = "forklift";
+    else if (/aquacultur|workboat|vessel|salmon|\bmarine\b|harbor|harbour|ferry|\bboat|shore[- ]?charg/.test(text)) category = "marine";
+    else if (/3pl|warehous|distribution|\blogistics\b/.test(text)) category = "warehouse";
+    else if (/\bagv\b|automation|\boem\b|integrat/.test(text)) category = "oem";
+
+    let situation = "evaluating";
+    if (/greenfield|from day one|\bday one\b|new [\w\s]{0,24}facilit/.test(text)) situation = "greenfield";
+    else if (/lead-acid|conversion|convert|full conversion/.test(text)) situation = "conversion";
+    else if (/refit|hybrid[\w\s-]{0,20}electric/.test(text)) situation = "refit";
+    else if (/\boem\b|frame agreement|integrat/.test(text)) situation = "oem";
+
+    const fm = about.match(/~?\s*([\d.,]+)\s*(?:[\w-]+\s+){0,3}?(m²|forklifts?|trucks?|workboats?|vessels?|boats?)/i);
+    const fleet = fm ? { n: numOf(fm[1]), raw: fm[1].trim(), unit: fm[2].toLowerCase().replace(/s$/, "") } : null;
+    const sm = about.match(/(\d+)\s*(?:distribution\s*)?sites?/i);
+    const sites = sm ? +sm[1] : null;
+
+    return { category, situation, fleet, sites, country: hub.country || "" };
+  }
+
+  function fleetPhrase(p) {
+    if (!p.fleet) return "fleet";
+    if (p.fleet.unit === "m²") return p.fleet.raw + " m²";
+    return p.fleet.raw + " " + p.fleet.unit + "s";
+  }
+
+  // the customer's operating world, in a word — flavours copy
+  const WORLD = {
+    forklift: "the warehouse floor", marine: "the water", warehouse: "the aisles",
+    oem: "your platform line", general: "your operation"
+  };
+  // which product leads for this customer
+  const LEAD_PRODUCT = {
+    forklift: { t: "Drop-in Li-ion packs", p: "48V and 24V packs that replace lead-acid one-for-one — same trays, no truck modifications, integrated heating for cold docks." },
+    marine: { t: "IP67 marine packs", p: "Sealed 24/48V packs built for spray, vibration and sub-zero water — DNV-GL type-approved, integrated cell heating below 0 °C." },
+    warehouse: { t: "Li-ion from day one", p: "A full Li-ion fleet designed into the building — no battery room in the floor plan, no swap shift ever scheduled." },
+    oem: { t: "OEM battery modules", p: "48V modules with an embedded BMS and a documented CAN interface — designed to drop into your platform, not the other way round." },
+    general: { t: "Li-ion packs", p: "Drop-in 24/48V packs for every major platform — integrated heating, 7-year / 10,000-cycle warranty." }
+  };
+  const CHARGE_PRODUCT = {
+    marine: { t: "ShorePower", p: "Quay-side charging sized to your berth turnaround — top up alongside, no diesel genset running." },
+    _default: { t: "SmartCharge", p: "10–30 kW opportunity charging at the points where work naturally pauses. VDE 0510-48 compliant — no classified battery room." }
+  };
+
+  // situation drives the headline & the "where this starts" framing
+  const SITUATION = {
+    conversion: {
+      kicker: "From lead-acid to Li-ion",
+      headline: (p) => p.category === "marine" ? "Retire the diesel.\nKeep the water time." : "The last battery room\nyou'll ever run.",
+      sitTitle: "Where this starts.",
+      sitLede: (h, p) => `${h.company} runs ${fleetPhrase(p)}${p.sites ? ` across ${p.sites} sites` : ""} on lead-acid today — a dedicated battery room, mid-shift swaps, and a maintenance line that grows every year the fleet ages.`,
+      stats: (h, p) => [
+        p.fleet && p.fleet.unit !== "m²" ? { v: Math.round(p.fleet.n * 0.3), l: "battery swaps a day, eliminated" } : { v: "0", l: "battery swaps once converted" },
+        { v: "−36%", l: "energy cost, from higher round-trip efficiency" },
+        p.sites ? { v: p.sites, l: "sites on one telemetry platform" } : { v: "7 yr", l: "warranty · 10,000 cycles to 80%" }
+      ]
     },
-    intro: {
-      name: "Company introduction",
-      headline: () => `Who we are,\nin your terms.`,
-      lede: (h) => `An introduction to NordCell Power for ${h.company}: what we make, what it changes for ${h.industry.toLowerCase()}, and the proof behind it.`,
-      cta: "Book a first meeting"
+    refit: {
+      kicker: "Hybrid to full-electric",
+      headline: () => "Off diesel.\nStill on the water.",
+      sitTitle: "Where this starts.",
+      sitLede: (h, p) => `${h.company} operates ${fleetPhrase(p)} on a hybrid-to-full-electric program. The packs that survive a warehouse won't survive a fjord — this is built for yours.`,
+      stats: (h, p) => [
+        p.fleet ? { v: p.fleet.raw, l: cap(p.fleet.unit) + "s in the refit program" } : { v: "22", l: "vessels in the program" },
+        { v: "99.6%", l: "uptime at −15 °C, trailing 12 months" },
+        { v: "IP67", l: "sealed & DNV-GL type-approved" }
+      ]
     },
-    renewal: {
-      name: "Renewal & expansion",
-      headline: () => `Phase one worked.\nHere's phase two.`,
-      lede: (h) => `What we delivered together so far, what the data says, and the next step for ${h.company}.`,
-      cta: "Plan the next phase"
+    greenfield: {
+      kicker: "A blank sheet",
+      headline: () => "Zero lead,\nfrom day one.",
+      sitTitle: "The rare chance.",
+      sitLede: (h, p) => `${h.company}'s ${p.fleet && p.fleet.unit === "m²" ? p.fleet.raw + " m² " : "new "}facility is a blank sheet — the chance to design the building around Li-ion instead of retrofitting it in later. No battery room, no swap shift, no legacy to undo.`,
+      stats: (h, p) => [
+        { v: "0 m²", l: "battery room in the floor plan" },
+        { v: "None", l: "swap shifts, ever" },
+        { v: "Ready", l: "for the 2027 indoor-charging code" }
+      ]
     },
-    tender: {
-      name: "Tender response",
-      headline: () => `Every requirement,\nanswered.`,
-      lede: (h) => `A structured response for ${h.company} with compliance evidence, certified documentation and committed pricing.`,
-      cta: "Review the compliance annex"
+    oem: {
+      kicker: "OEM partnership",
+      headline: () => "One energy system.\nEvery platform you ship.",
+      sitTitle: "Where this starts.",
+      sitLede: (h) => `${h.company} integrates NordCell packs into its own platforms. That means the energy system has to disappear into your product — documented, certified, and consistent across every unit you ship.`,
+      stats: () => [
+        { v: "11,400+", l: "packs in daily operation, 14 countries" },
+        { v: "99.6%", l: "fleet uptime, trailing 12 months" },
+        { v: "7 yr", l: "warranty · 10,000 cycles to 80%" }
+      ]
+    },
+    evaluating: {
+      kicker: null,
+      headline: (p, h, o) => o.name === "Tender response" ? "Every requirement,\nanswered." : `A case ${h.company.split(" ")[0]}\ncan measure.`,
+      sitTitle: "Where this starts.",
+      sitLede: (h) => hub_about_or(h),
+      stats: (h) => [
+        hub_value_stat(h),
+        { v: "99.6%", l: "NordCell fleet uptime, trailing 12 months" },
+        { v: "7 yr", l: "warranty · 10,000 cycles to 80% capacity" }
+      ]
     }
   };
-  const MIDDLE_TITLE = { proposal: "How the rollout lands", intro: "What we make", renewal: "What phase one proved", tender: "Why this bid holds" };
+  function hub_about_or(h) { return h.about || `An evaluation for ${h.company}, built from the data in your shared hub.`; }
+  function hub_value_stat(h) { return h.value ? { v: eur(h.value), l: "engagement value on the table" } : { v: "Q3", l: "target decision window" }; }
 
-  /* ---------- computed content blocks ---------- */
+  // compose everything the deck shell needs, specific to this customer + objective
+  function composeContent(hub, objKey, opts) {
+    const o = OBJ[objKey] || OBJ.proposal;
+    const p = deriveProfile(hub);
+    const sit = SITUATION[p.situation] || SITUATION.evaluating;
+    const industry = (hub.industry || "your industry").toLowerCase();
 
-  function stats(hub) {
-    const s = [];
-    if (hub.value) s.push({ v: eur(hub.value), l: "engagement value on the table" });
-    s.push({ v: "99.6%", l: "NordCell fleet uptime, trailing 12 months" });
-    s.push({ v: "7 yr", l: "warranty — 10,000 cycles to 80% capacity" });
-    return s.slice(0, 3);
+    // headline: situation-led for proposal/intro; objective-led for renewal/tender
+    let headline;
+    if (objKey === "renewal") headline = "Phase one worked.\nHere's phase two.";
+    else if (objKey === "tender") headline = "Every requirement,\nanswered.";
+    else headline = sit.headline(p, hub, o);
+
+    // lede: objective intent, woven with the customer's world
+    const world = WORLD[p.category] || WORLD.general;
+    let lede;
+    const sized = p.fleet ? `sized to ${fleetPhrase(p)}` : `built around ${world}`;
+    if (objKey === "proposal") lede = `Scope, pricing and rollout for ${hub.company} — ${sized}, priced at your hub rates, and built to decide on.`;
+    else if (objKey === "intro") lede = `An introduction to NordCell Power for ${hub.company}: what we make, what it changes for ${industry}, and the proof from fleets already running on ${world}.`;
+    else if (objKey === "renewal") { const won = (hub.proposals || []).filter((x) => x.status === "Accepted"); const v = won.reduce((a, x) => a + (x.value || 0), 0); lede = `What we've delivered with ${hub.company} so far${v ? ` — ${eur(v)} accepted and running` : ""}, what the telemetry says, and the next step for ${world}.`; }
+    else lede = `A structured response for ${hub.company}: compliance evidence, certified documentation and committed pricing, every answer backed by a document in the shared hub.`;
+
+    // stats: situation-specific, computed from their fleet where possible
+    const stats = sit.stats(hub, p).slice(0, 3);
+
+    // middle section: objective-shaped, but products chosen for this customer
+    let middleTitle, middleCards;
+    if (objKey === "intro") {
+      middleTitle = "What we make";
+      middleCards = [
+        LEAD_PRODUCT[p.category] || LEAD_PRODUCT.general,
+        CHARGE_PRODUCT[p.category] || CHARGE_PRODUCT._default,
+        { t: "FleetView", p: "Telemetry on every pack: state of health, utilization and the sizing data your next decision needs — exportable to your systems." }
+      ];
+    } else if (objKey === "renewal") {
+      const won = (hub.proposals || []).filter((x) => x.status === "Accepted");
+      const v = won.reduce((a, x) => a + (x.value || 0), 0);
+      middleTitle = "What phase one proved";
+      middleCards = [
+        { t: "Delivered together", p: won.length ? `${won.length} accepted proposal${won.length > 1 ? "s" : ""} worth ${eur(v)} — on time, on spec.` : "Our first phase together — measured, not promised." },
+        { t: "Measured on your fleet", p: `Uptime, utilization and state-of-health data from ${fleetPhrase(p)}, not an industry average.` },
+        { t: "The next step", p: "That data sizes phase two exactly — you buy what the operation needs, not a safety margin." }
+      ];
+    } else if (objKey === "tender") {
+      middleTitle = "Why this bid holds";
+      middleCards = [
+        { t: "Certified", p: p.category === "marine" ? "CE, UN 38.3 and DNV-GL type approval — the full marine certificate bundle ships with this response." : "CE, UN 38.3 and VDE 0510-48 — the full certificate bundle ships with this response." },
+        { t: "Warranted", p: "7 years / 10,000 cycles to 80% capacity, underwriting the cost model in this bid." },
+        { t: "Evidenced", p: "Every compliance answer points to a test protocol or certificate in the shared hub — nothing is asserted without a document." }
+      ];
+    } else {
+      middleTitle = "How the rollout lands";
+      middleCards = [
+        { t: "Contract & survey", p: `Walkthrough with your engineers${p.sites ? ` across all ${p.sites} sites` : ""}; final layout and grid check before anything is ordered.` },
+        { t: p.category === "marine" ? "Refit & training" : "Install & training", p: `${p.situation === "greenfield" ? "Commissioned as the site opens" : "Converted in planned windows"} — no ${p.category === "marine" ? "vessels off the water" : "production downtime"} — with your team trained on-site in one day.` },
+        { t: "Review & scale", p: "90-day telemetry review; the data sizes the next phase before you commit to it." }
+      ];
+    }
+
+    // closing, contact-aware
+    const first = (hub.contact || "").split(" ")[0] || "your team";
+    const closingLede = `Reply in your Mimra hub — every question lands with ${p.category === "oem" ? "engineering and procurement together" : "the whole team"} — or book directly with ${first}'s calendar in mind.`;
+
+    return {
+      objName: o.name, cta: o.cta, kicker: sit.kicker || o.name,
+      headline, lede, sitTitle: sit.sitTitle, sitLede: sit.sitLede(hub, p),
+      stats, middleTitle, middleCards, closingLede, profile: p
+    };
   }
 
   function hubQuote(hub) {
@@ -58,33 +215,6 @@
     if (!t) return "";
     const q = t.what.match(/["“](.+?)["”]/);
     return q ? `<div class="hubnote"><b>From your hub:</b> “${esc(q[1])}” — answered in this document, and in your hub under Technical data.</div>` : "";
-  }
-
-  function middleCards(hub, objKey) {
-    if (objKey === "intro") return [
-      { t: "Li-ion packs", p: "Drop-in 24/48V packs for every major platform — integrated heating for cold environments, 7-year / 10,000-cycle warranty." },
-      { t: "SmartCharge", p: "10–30 kW opportunity charging at the points where work naturally pauses. VDE 0510-48 compliant — no classified battery room." },
-      { t: "FleetView", p: "Telemetry on every pack: state of health, utilization and the sizing data your next decision needs." }
-    ];
-    if (objKey === "renewal") {
-      const won = (hub.proposals || []).filter((p) => p.status === "Accepted");
-      const wonValue = won.reduce((a, p) => a + (p.value || 0), 0);
-      return [
-        { t: "Delivered together", p: won.length ? won.length + " accepted proposal" + (won.length > 1 ? "s" : "") + " worth " + eur(wonValue) + " — on time, on spec." : "Our first phase together — measured, not promised." },
-        { t: "Measured, not claimed", p: "99.6% fleet uptime across all NordCell customers, trailing 12 months — including yours." },
-        { t: "The next step", p: "FleetView data from phase one sizes phase two exactly. You buy what the operation needs, not a safety margin." }
-      ];
-    }
-    if (objKey === "tender") return [
-      { t: "Certified", p: "CE, UN 38.3, VDE 0510-48 and DNV-GL type approval — the full certificate bundle ships with this response." },
-      { t: "Warranted", p: "7 years / 10,000 cycles to 80% capacity, underwriting the cost model in this bid." },
-      { t: "Evidenced", p: "Every compliance answer references a test protocol or certificate in the shared hub — nothing is asserted without a document." }
-    ];
-    return [
-      { t: "Contract & survey", p: "Site walkthrough with your engineers; final layout and grid check before anything is ordered." },
-      { t: "Install & training", p: "Conversion in planned windows — no production downtime — with your team trained on-site in one day." },
-      { t: "Review & scale", p: "90-day telemetry review; the data sizes the next phase before you commit to it." }
-    ];
   }
 
   // rollout timeline anchored to the deal's expected close month
@@ -184,8 +314,8 @@
   /* ---------- Essential: clean template document ---------- */
   function essential(hub, objKey, accent, opts) {
     const o = OBJ[objKey] || OBJ.proposal;
-    const st = stats(hub);
-    const mid = middleCards(hub, objKey);
+    const c = composeContent(hub, objKey, opts);
+    const st = c.stats;
     const meta = docMeta(hub, o, opts);
     const sv = savingsBlock(hub, opts);
     const tl = objKey === "proposal" ? timelineSteps(hub) : null;
@@ -241,12 +371,12 @@ ${SAVINGS_CSS}
   <div><b>Reference</b> ${meta.ref}</div><div><b>Valid until</b> ${meta.valid}</div></div>
 </header>
 <h2>Summary</h2>
-<p>${esc(o.lede(hub))}</p>
-<p style="margin-top:10px">${esc(hub.about)}</p>
+<p>${esc(c.lede)}</p>
+<p style="margin-top:10px">${esc(c.sitLede)}</p>
 <div class="stats">${st.map((x) => `<div class="stat"><b>${esc(x.v)}</b><span>${esc(x.l)}</span></div>`).join("")}</div>
 ${hubQuote(hub)}
-<h2>${esc(MIDDLE_TITLE[objKey] || MIDDLE_TITLE.proposal)}</h2>
-<div class="stats">${mid.map((c) => `<div class="stat"><b style="font-size:16px">${esc(c.t)}</b><span style="font-size:13px;color:var(--ink2)">${esc(c.p)}</span></div>`).join("")}</div>
+<h2>${esc(c.middleTitle)}</h2>
+<div class="stats">${c.middleCards.map((m) => `<div class="stat"><b style="font-size:16px">${esc(m.t)}</b><span style="font-size:13px;color:var(--ink2)">${esc(m.p)}</span></div>`).join("")}</div>
 ${sv ? sv.html : ""}
 ${priceTable(hub)}
 ${tl ? `<h2>Timeline</h2><ul class="tl-list">${tl.map((s) => `<li><span class="q">${esc(s.q)}</span><span><b>${esc(s.t)}</b> — ${esc(s.p)}</span></li>`).join("")}</ul>` : ""}
@@ -263,8 +393,8 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
   function signature(hub, objKey, accent, opts) {
     const accentInk = (opts && opts.accentInk) || "#7c3a1e";
     const o = OBJ[objKey] || OBJ.proposal;
-    const st = stats(hub);
-    const mid = middleCards(hub, objKey);
+    const c = composeContent(hub, objKey, opts);
+    const st = c.stats;
     const meta = docMeta(hub, o, opts);
     const sv = savingsBlock(hub, opts);
     const tl = objKey === "proposal" ? timelineSteps(hub) : null;
@@ -275,8 +405,8 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
 <section>
   <div class="inner">
     <div class="kicker rv">The situation</div>
-    <h2 class="rv">Where this starts.</h2>
-    <p class="lede rv d1">${esc(hub.about)}</p>
+    <h2 class="rv">${esc(c.sitTitle)}</h2>
+    <p class="lede rv d1">${esc(c.sitLede)}</p>
     <div class="grid cols-3">
       ${st.map((x, i) => `<div class="card rv d${(i % 2) + 1}"><div class="stat-value">${esc(x.v)}</div><div class="stat-note">${esc(x.l)}</div></div>`).join("")}
     </div>
@@ -297,9 +427,9 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
 <section>
   <div class="inner">
     <div class="kicker rv">${esc(o.name)}</div>
-    <h2 class="rv">${esc(MIDDLE_TITLE[objKey] || MIDDLE_TITLE.proposal)}.</h2>
+    <h2 class="rv">${esc(c.middleTitle)}.</h2>
     <div class="grid cols-3">
-      ${mid.map((c, i) => `<div class="card rv d${(i % 2) + 1}"><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></div>`).join("")}
+      ${c.middleCards.map((m, i) => `<div class="card rv d${(i % 2) + 1}"><h3>${esc(m.t)}</h3><p>${esc(m.p)}</p></div>`).join("")}
     </div>
     ${tl ? `<div class="tl rv d2">${tl.map((s) => `
       <div class="tl-item"><span class="q">${esc(s.q)}</span><b>${esc(s.t)}</b><span>${esc(s.p)}</span></div>`).join("")}</div>` : ""}
@@ -394,8 +524,8 @@ ${SAVINGS_CSS}
   <div class="inner">
     <div class="brand-row rv"><b>${esc(meta.workspace)}</b> <span class="x">×</span> <b>${esc(hub.company)}</b></div>
     <div class="kicker rv d1">${esc(o.name)} · ${meta.ref}</div>
-    <h1 class="rv d1">${esc(o.headline(hub))}</h1>
-    <p class="lede rv d2">${esc(o.lede(hub))}</p>
+    <h1 class="rv d1">${esc(c.headline)}</h1>
+    <p class="lede rv d2">${esc(c.lede)}</p>
     <div class="cover-meta rv d2">
       <div><b>Prepared for</b> ${esc(hub.contact)}, ${esc(hub.contactRole)}</div>
       <div><b>Prepared by</b> ${esc(meta.sender)}, ${esc(meta.workspace)}</div>
@@ -409,7 +539,7 @@ ${body}
   <div class="inner">
     <div class="kicker rv" style="color:#e9b18f">Next step</div>
     <h2 class="rv">${esc(o.cta)}.</h2>
-    <p class="lede rv d1">Reply in your Mimra hub — every question lands with the whole team — or book directly with ${esc(hub.contact.split(" ")[0])}'s calendar in mind.</p>
+    <p class="lede rv d1">${esc(c.closingLede)}</p>
     <a class="cta rv d2" href="mailto:${esc(meta.email)}?subject=${encodeURIComponent(o.name + " — " + hub.company)}">${esc(o.cta)} →</a>
     <div class="made-by rv d2">${meta.ref} · composed for ${esc(hub.company)} · generated with <em>mimra</em> Signature</div>
   </div>
