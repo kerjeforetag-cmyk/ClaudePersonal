@@ -857,7 +857,7 @@
     <div class="step-head"><div class="step-num">1</div><h3>Who is it for?</h3></div>
     <div class="grid cols-3">
       ${D.hubs.map((h) => `
-      <div class="pick ${s.customer === h.id ? "on" : ""}" data-pick="customer" data-val="${h.id}">
+      <div class="pick ${s.customer === h.id ? "on" : ""}" data-pick="customer" data-val="${h.id}" role="radio" tabindex="0" aria-checked="${s.customer === h.id}">
         <b>${h.flag} ${esc(h.company)}</b><p>${esc(h.industry)} — ${esc(h.stage)}</p>
       </div>`).join("")}
     </div>
@@ -865,7 +865,7 @@
     <div class="step-head"><div class="step-num">2</div><h3>What should it achieve?</h3></div>
     <div class="grid cols-4">
       ${D.studio.objectives.map((o) => `
-      <div class="pick ${s.objective === o.id ? "on" : ""}" data-pick="objective" data-val="${o.id}">
+      <div class="pick ${s.objective === o.id ? "on" : ""}" data-pick="objective" data-val="${o.id}" role="radio" tabindex="0" aria-checked="${s.objective === o.id}">
         <b>${esc(o.name)}</b><p>${esc(o.desc)}</p>
       </div>`).join("")}
     </div>
@@ -873,7 +873,7 @@
     <div class="step-head"><div class="step-num">3</div><h3>Pick your tier</h3></div>
     <div class="grid cols-2">
       ${D.studio.tiers.map((t) => `
-      <div class="pick ${s.tier === t.id ? "on" : ""}" data-pick="tier" data-val="${t.id}">
+      <div class="pick ${s.tier === t.id ? "on" : ""}" data-pick="tier" data-val="${t.id}" role="radio" tabindex="0" aria-checked="${s.tier === t.id}">
         ${t.recommended ? `<span class="rec badge brand">Recommended</span>` : ""}
         <b>${esc(t.name)}</b><div class="price">${esc(t.price)}</div><p>${esc(t.desc)}</p>
         <ul>${t.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
@@ -924,9 +924,12 @@
           const org = (x.org || "").toLowerCase();
           return org && (hub.company.toLowerCase().includes(org) || org.includes(coreName.split(" ")[0]));
         });
+        const acc = ACCENTS[accentKey] || ACCENTS.terracotta;
         const built = window.MimraGen.buildDeck(hub, s.objective, s.tier, {
-          accent: (ACCENTS[accentKey] || ACCENTS.terracotta).accent,
-          accentInk: (ACCENTS[accentKey] || ACCENTS.terracotta).inkL,
+          accent: acc.accent,
+          accentInk: acc.inkL,
+          accentPale: acc.inkD,
+          accentSoftD: acc.softD,
           sender: { name: D.tenant.user.name, email: D.tenant.user.email },
           workspace: store.get("mimra.wsname") || D.tenant.name,
           references, emphasis, people, take: s.take || 1
@@ -1546,8 +1549,9 @@
     }
   });
   document.addEventListener("keydown", (e) => {
-    // switch-role toggles are divs — make Enter/Space flip them (WCAG 2.1.1)
-    if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("toggle")) {
+    // div-based controls (switch toggles, studio picks, tour doors) are keyboard-operable (WCAG 2.1.1)
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches &&
+        e.target.matches(".toggle, [data-pick], [data-tour]")) {
       e.preventDefault(); e.target.click(); return;
     }
     if (e.key === "Escape") {
@@ -1606,9 +1610,9 @@
     openModal(`
       <h3>Welcome to Mimra</h3>
       <p class="sub">Three places do most of the work. Pick where to start — you can't break anything, and Settings can reset the demo anytime.</p>
-      <div class="pick" data-tour="#/dashboard" style="margin-bottom:10px"><b>1 · See your day</b><p>Pipeline, next best actions, market news and travel in one morning view.</p></div>
-      <div class="pick" data-tour="#/hub/mueller" style="margin-bottom:10px"><b>2 · Open a customer hub</b><p>The prices, documents, proposals and decks you share with one customer.</p></div>
-      <div class="pick" data-tour="#/studio" style="margin-bottom:10px"><b>3 · Generate a presentation</b><p>From hub data to a deck your customer remembers — in seconds.</p></div>
+      <div class="pick" data-tour="#/dashboard" role="button" tabindex="0" style="margin-bottom:10px"><b>1 · See your day</b><p>Pipeline, next best actions, market news and travel in one morning view.</p></div>
+      <div class="pick" data-tour="#/hub/mueller" role="button" tabindex="0" style="margin-bottom:10px"><b>2 · Open a customer hub</b><p>The prices, documents, proposals and decks you share with one customer.</p></div>
+      <div class="pick" data-tour="#/studio" role="button" tabindex="0" style="margin-bottom:10px"><b>3 · Generate a presentation</b><p>From hub data to a deck your customer remembers — in seconds.</p></div>
       <div class="modal-actions"><button class="btn ghost sm" data-tour="">Skip, I'll explore</button></div>`);
   }
 

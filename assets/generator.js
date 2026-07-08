@@ -439,7 +439,7 @@ ${SAVINGS_CSS}
 <header>
   <div class="brand">${esc(meta.workspace)} <span style="color:var(--ink3)">· prepared with</span> <em>mimra</em></div>
   <h1>${esc(o.name)}\n${esc(hub.company)}</h1>
-  <div class="meta"><div><b>For</b> ${esc(hub.contact)}, ${esc(hub.contactRole)}</div>
+  <div class="meta"><div><b>For</b> ${[hub.contact, hub.contactRole].filter(Boolean).map(esc).join(", ")}</div>
   <div><b>From</b> ${esc(meta.sender)}, ${esc(meta.workspace)}</div>
   <div><b>Reference</b> ${meta.ref}</div><div><b>Valid until</b> ${meta.valid}</div></div>
 </header>
@@ -467,6 +467,8 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
   /* ---------- Signature: full-bleed scroll deck ---------- */
   function signature(hub, objKey, accent, opts) {
     const accentInk = (opts && opts.accentInk) || "#7c3a1e";
+    const accentPale = (opts && opts.accentPale) || "#e8a284";   // light accent, legible on the dark cover
+    const accentSoftD = (opts && opts.accentSoftD) || "#3a2419"; // accent-tinted dark surface for cover/closing
     const o = OBJ[objKey] || OBJ.proposal;
     const c = composeContent(hub, objKey, opts);
     const st = c.stats;
@@ -536,7 +538,7 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
 <script>document.documentElement.className="js"</script>
 <style>
 :root{--paper:#f7f5ef;--card:#fcfcfb;--ink:#1a1915;--ink2:#52514e;--ink3:#898781;--line:#e3e1d8;
---accent:${accent};--accent-ink:${accentInk};--serif:"Charter","Iowan Old Style",Georgia,serif;
+--accent:${accent};--accent-ink:${accentInk};--accent-pale:${accentPale};--accent-soft-d:${accentSoftD};--serif:"Charter","Iowan Old Style",Georgia,serif;
 --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--ease:cubic-bezier(.22,.8,.3,1)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased}
@@ -554,11 +556,11 @@ h2{font-size:clamp(28px,4vw,44px);line-height:1.12;margin-bottom:18px}
 .js .rv{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
 .js .rv.in{opacity:1;transform:none}.js .rv.d1{transition-delay:.1s}.js .rv.d2{transition-delay:.2s}
 .amb::before,.amb::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.45;z-index:0;pointer-events:none}
-.amb::before{width:560px;height:560px;top:-200px;right:-140px;background:radial-gradient(circle at 40% 40%,#e9b18f,#d97757 55%,transparent 75%);animation:d1 30s var(--ease) infinite alternate}
+.amb::before{width:560px;height:560px;top:-200px;right:-140px;background:radial-gradient(circle at 40% 40%,var(--accent-pale),var(--accent) 55%,transparent 75%);animation:d1 30s var(--ease) infinite alternate}
 .amb::after{width:480px;height:480px;bottom:-240px;left:-120px;background:radial-gradient(circle at 60% 40%,#cfd8bd,#a8b58f 55%,transparent 75%);animation:d2 36s var(--ease) infinite alternate}
 @keyframes d1{to{transform:translate(-80px,60px) scale(1.18)}}@keyframes d2{to{transform:translate(70px,-50px) scale(1.12)}}
-.cover{background:linear-gradient(150deg,#23221c,#35301f 55%,#4a3423);color:#efede4}
-.cover .kicker{color:#e9b18f}.cover h1{color:#fff}.cover .lede{color:#cdc9ba}
+.cover{background:linear-gradient(150deg,#1e1c19,var(--accent-soft-d));color:#efede4}
+.cover .kicker{color:var(--accent-pale)}.cover h1{color:#fff}.cover .lede{color:#cdc9ba}
 .brand-row{display:flex;align-items:center;gap:14px;margin-bottom:44px;font-size:15px;color:#cdc9ba}
 .brand-row .x{color:var(--accent);font-family:var(--serif);font-size:20px}.brand-row b{color:#fff}
 .cover-meta{display:flex;gap:34px;margin-top:54px;flex-wrap:wrap;font-size:13.5px;color:#a5a294}
@@ -587,10 +589,10 @@ h2 + p{color:var(--ink2)}
 .tl-item span{font-size:12.5px;color:var(--ink2)}
 .tl-item .q{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;display:block;margin-bottom:4px}
 ${SAVINGS_CSS}
-.closing{background:linear-gradient(150deg,#23221c,#4a3423);color:#efede4;text-align:center}
+.closing{background:linear-gradient(150deg,#1e1c19,var(--accent-soft-d));color:#efede4;text-align:center}
 .closing h2{color:#fff}.closing .lede{color:#cdc9ba;margin-inline:auto}
 .cta{display:inline-flex;gap:10px;background:var(--accent);color:#fff;font-weight:650;font-size:16px;padding:15px 34px;border-radius:999px;text-decoration:none;margin-top:34px;box-shadow:0 10px 30px -10px rgba(26,25,21,.5)}
-.made-by{margin-top:70px;font-size:12px;color:#8a8779;letter-spacing:.06em}.made-by em{font-style:normal;color:#e9b18f;font-family:var(--serif)}
+.made-by{margin-top:70px;font-size:12px;color:#8a8779;letter-spacing:.06em}.made-by em{font-style:normal;color:var(--accent-pale);font-family:var(--serif)}
 @media(max-width:860px){section{padding:70px 6vw;min-height:auto}.cols-3{grid-template-columns:1fr}.tl{grid-template-columns:1fr;gap:22px}.tl::before{display:none}.dots{display:none}}
 @media print{section{min-height:auto;page-break-inside:avoid;padding:40px 6vw}.js .rv{opacity:1;transform:none}.amb::before,.amb::after{display:none}.dots,.progress{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .rv{opacity:1;transform:none}}
@@ -606,7 +608,7 @@ ${SAVINGS_CSS}
     <h1 class="rv d1">${esc(c.headline)}</h1>
     <p class="lede rv d2">${esc(c.lede)}</p>
     <div class="cover-meta rv d2">
-      <div><b>Prepared for</b> ${esc(hub.contact)}, ${esc(hub.contactRole)}</div>
+      <div><b>Prepared for</b> ${[hub.contact, hub.contactRole].filter(Boolean).map(esc).join(", ")}</div>
       <div><b>Prepared by</b> ${esc(meta.sender)}, ${esc(meta.workspace)}</div>
       <div><b>Date</b> ${meta.date}</div>
       <div><b>Valid until</b> ${meta.valid}</div>
@@ -616,7 +618,7 @@ ${SAVINGS_CSS}
 ${body}
 <section class="closing amb">
   <div class="inner">
-    <div class="kicker rv" style="color:#e9b18f">Next step</div>
+    <div class="kicker rv" style="color:var(--accent-pale)">Next step</div>
     <h2 class="rv">${esc(o.cta)}.</h2>
     <p class="lede rv d1">${esc(c.closingLede)}</p>
     <a class="cta rv d2" href="mailto:${esc(meta.email)}?subject=${encodeURIComponent(o.name + " — " + hub.company)}">${esc(o.cta)} →</a>
@@ -655,7 +657,7 @@ ${printBtn(accent)}
             : null,
           priceLines: (hub.priceList || []).length,
           savingsAvg: sv ? sv.avg : null,
-          pricingFirst: !!(opts && opts.emphasis === "pricing" && hub.priceList && hub.priceList.length),
+          pricingFirst: tierKey === "signature" && !!(opts && opts.emphasis === "pricing" && hub.priceList && hub.priceList.length),
           references: (opts && opts.references && opts.references.length) || 0,
           hasTimeline: objKey === "proposal"
         }
