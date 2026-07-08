@@ -53,7 +53,25 @@
         if (Array.isArray(saved.members)) D.tenant.members = saved.members;
       }
     } catch (e) { /* ignore */ }
+    normalizeHubs();
   })();
+  // guarantee every hub carries the arrays the UI iterates, so partial/edited
+  // imports can never throw at boot and strand the user on a dead login screen
+  function normalizeHubs() {
+    if (!Array.isArray(D.hubs)) { D.hubs = []; return; }
+    D.hubs = D.hubs.filter((h) => h && typeof h === "object" && h.id).map((h) => {
+      ["priceList", "docs", "proposals", "presentations", "timeline"].forEach((k) => {
+        if (!Array.isArray(h[k])) h[k] = [];
+      });
+      if (!Array.isArray(h.activity30d) || h.activity30d.length < 2) h.activity30d = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      if (typeof h.company !== "string") h.company = "Untitled hub";
+      if (typeof h.flag !== "string") h.flag = "🏳️";
+      if (typeof h.value !== "number") h.value = 0;
+      return h;
+    });
+    if (!Array.isArray(D.people)) D.people = [];
+    if (!Array.isArray(D.competitors)) D.competitors = [];
+  }
   function persist() {
     store.set("minra.data.v1", JSON.stringify({ hubs: D.hubs, people: D.people, competitors: D.competitors, members: D.tenant.members }));
   }
@@ -90,7 +108,12 @@
       store.del("minra.theme");
     }
     const tb = $("#theme-btn");
-    if (tb) { tb.textContent = isDark() ? "☀️" : "🌙"; tb.title = isDark() ? "Switch to light" : "Switch to dark"; }
+    if (tb) {
+      tb.textContent = isDark() ? "☀️" : "🌙";
+      tb.title = isDark() ? "Switch to light" : "Switch to dark";
+      tb.setAttribute("aria-label", isDark() ? "Switch to light theme" : "Switch to dark theme");
+      tb.setAttribute("aria-pressed", String(isDark()));
+    }
   }
   applyTheme(store.get("minra.theme") || "");
   try {
@@ -134,6 +157,9 @@
   // sparkline: single series — de-emphasized line, accent end-dot (stat-tile spec)
   function sparkline(points, w, h, opts) {
     w = w || 150; h = h || 36; opts = opts || {};
+    if (!Array.isArray(points) || points.length < 2 || points.some((v) => typeof v !== "number" || !isFinite(v))) {
+      return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="no trend yet"><line x1="4" y1="${h - 4}" x2="${w - 4}" y2="${h - 4}" stroke="var(--spark)" stroke-width="2" stroke-linecap="round"/></svg>`;
+    }
     const line = opts.line || "var(--spark)";
     const dot = opts.dot || "var(--s1)";
     const min = Math.min(...points), max = Math.max(...points);
@@ -173,7 +199,7 @@
         <div class="bar-slot"><div class="bar" style="height:${Math.max(8, d.s * 0.64)}px;background:${seqFor(d.s)}"></div></div>
         <div class="d">${esc(d.d.replace(/^\w+ /, ""))}</div>
       </div>`).join("") + `</div>
-      <div class="axis-note">Day score 0–100 — customer availability · events · travel cost · weather. Darker = better.</div>`;
+      <div class="axis-note">Day score 0–100 — customer availability · events · travel cost · weather. Best days highlighted.</div>`;
   }
 
   /* ---------- intelligence: deal scores & next best actions ---------- */
@@ -588,7 +614,7 @@
     <div class="grid cols-2" style="margin-bottom:22px">
       ${actions.map((a, i) => `
       <div class="card hover rise rise-${(i % 4) + 1}" style="display:flex;gap:14px;align-items:flex-start">
-        <div class="hn-ico" style="background:var(--ink);flex:none">${i + 1}</div>
+        <div class="num-chip">${i + 1}</div>
         <div style="flex:1"><b style="font-size:14.5px">${esc(a.title)}</b>
           <p class="sub" style="margin:4px 0 10px;font-size:13px;line-height:1.5">${esc(a.why)}</p>
           <a class="btn ghost sm" href="${a.hash}">${esc(a.label)} →</a>
@@ -753,7 +779,7 @@
       <div class="cust-banner"><span class="badge">Customer preview</span>
         <span>This is what ${esc(h.contact)}'s team sees. Deal value, stage and pulse analytics are hidden.</span>
         <span class="grow"></span>
-        <button class="btn sm" style="background:#efede4;color:var(--ink)" data-act="cust-view">Back to internal view</button>
+        <button class="btn sm" style="background:#efede4;color:#1a1915" data-act="cust-view">Back to internal view</button>
       </div>` : "";
     const heroRight = custView ? "" : `
         <div style="text-align:right"><div style="font-size:12px;color:#cdc9ba">Deal value</div>
@@ -1437,6 +1463,10 @@
     }
   });
   document.addEventListener("keydown", (e) => {
+    // switch-role toggles are divs — make Enter/Space flip them (WCAG 2.1.1)
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("toggle")) {
+      e.preventDefault(); e.target.click(); return;
+    }
     if (e.key === "Escape") {
       if (!deckOverlay.hidden) { deckOverlay.hidden = true; deckFrame.srcdoc = ""; }
       else if (!modalWrap.hidden) closeModal();
@@ -1461,17 +1491,21 @@
     if (!f) return;
     const rd = new FileReader();
     rd.onload = () => {
-      try {
-        const payload = JSON.parse(rd.result);
-        if (!payload || !payload.data || !Array.isArray(payload.data.hubs)) throw new Error("shape");
-        store.set("minra.data.v1", JSON.stringify(payload.data));
-        const b = payload.branding || {};
-        ["accent", "wsname", "theme", "username"].forEach((k) => {
-          if (b[k]) store.set("minra." + k, b[k]); else store.del("minra." + k);
-        });
-        toast("Workspace imported — reloading.");
-        setTimeout(() => location.reload(), 700);
-      } catch (err) { toast("That file isn't a Minra workspace export."); }
+      let payload;
+      try { payload = JSON.parse(rd.result); } catch (err) { toast("That file isn't valid JSON."); return; }
+      const d = payload && payload.data;
+      const ok = d && Array.isArray(d.hubs) && d.hubs.every((h) => h && typeof h === "object" && h.id) &&
+        (d.people === undefined || Array.isArray(d.people)) &&
+        (d.competitors === undefined || Array.isArray(d.competitors));
+      if (!ok) { toast("That file isn't a Minra workspace export."); return; }
+      if (!confirm("Import will replace your current workspace (" + D.hubs.length + " hubs) with this file. Export first if you want a backup. Continue?")) return;
+      store.set("minra.data.v1", JSON.stringify(d));
+      const b = payload.branding || {};
+      ["accent", "wsname", "theme", "username"].forEach((k) => {
+        if (b[k]) store.set("minra." + k, b[k]); else store.del("minra." + k);
+      });
+      toast("Workspace imported — reloading.");
+      setTimeout(() => location.reload(), 700);
     };
     rd.readAsText(f);
     e.target.value = "";

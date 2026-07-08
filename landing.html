@@ -6,6 +6,10 @@
 <title>Minra — the sales manager sells. Minra does the rest.</title>
 <meta name="description" content="Customer hubs, generated presentations and market intelligence for B2B sales teams. One hub per customer, decks in seconds, no seats." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23c96442'/><text x='50' y='68' font-size='56' font-family='Georgia' text-anchor='middle' fill='white'>m</text></svg>" />
+<script>
+  // honor the theme the visitor picked in the app (falls back to system)
+  try { var t = localStorage.getItem("minra.theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <style>
   :root {
     --paper: #f6f4ee; --card: #fcfcfb; --ink: #1a1915; --ink-2: #52514e; --ink-3: #898781;
@@ -220,7 +224,7 @@
               <div class="mock-tile"><b>94</b><span>trip score</span></div>
             </div>
             <div class="mock-bars">
-              <i style="width:88%"></i><i style="width:64%"></i><i style="width:96%;background:#184f95"></i><i style="width:52%"></i>
+              <i style="width:88%"></i><i style="width:64%"></i><i style="width:96%;background:#256abf"></i><i style="width:52%"></i>
             </div>
           </div>
         </div>

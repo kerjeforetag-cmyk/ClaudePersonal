@@ -42,7 +42,7 @@
       <div class="search" id="search-box">⌕ <input id="global-search" placeholder="Search customers, prices, people…  Ctrl+K" autocomplete="off" />
         <div class="search-results" id="search-results" hidden></div>
       </div>
-      <button class="btn ghost sm" id="theme-btn" title="Toggle theme">🌙</button>
+      <button class="btn ghost sm" id="theme-btn" title="Toggle theme" aria-label="Toggle light or dark theme" aria-pressed="false">🌙</button>
       <div style="position:relative" id="notif-wrap">
         <button class="btn ghost sm" id="notif-btn" title="Notifications">🔔<span class="notif-dot" id="notif-dot" hidden></span></button>
         <div class="notif-panel" id="notif-panel" hidden></div>
@@ -53,13 +53,13 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div class="deck-overlay" id="deck-overlay" hidden>
   <div class="deck-bar">
     <b id="deck-title">Deck preview</b>
     <span class="grow"></span>
-    <button class="btn sm" id="deck-download" style="background:#efede4;color:var(--ink)">Download HTML</button>
+    <button class="btn sm" id="deck-download" style="background:#efede4;color:#1a1915">Download HTML</button>
     <button class="deck-close" id="deck-close" aria-label="Close">×</button>
   </div>
   <iframe id="deck-frame" title="Generated presentation"></iframe>
