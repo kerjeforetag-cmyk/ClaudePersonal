@@ -889,12 +889,18 @@
           if (/pric|number|commercial/i.test(top[0]) && top[1] / total >= 0.2) emphasis = "pricing";
         }
         const accentKey = store.get("mimra.accent") || "terracotta";
+        // people on the customer's side (org matches the hub company)
+        const coreName = hub.company.split(" ").slice(0, 2).join(" ").toLowerCase();
+        const people = D.people.filter((x) => {
+          const org = (x.org || "").toLowerCase();
+          return org && (hub.company.toLowerCase().includes(org) || org.includes(coreName.split(" ")[0]));
+        });
         const built = window.MimraGen.buildDeck(hub, s.objective, s.tier, {
           accent: (ACCENTS[accentKey] || ACCENTS.terracotta).accent,
           accentInk: (ACCENTS[accentKey] || ACCENTS.terracotta).inkL,
           sender: { name: D.tenant.user.name, email: D.tenant.user.email },
           workspace: store.get("mimra.wsname") || D.tenant.name,
-          references, emphasis
+          references, emphasis, people, take: s.take || 1
         });
         lastDeck = {
           html: built.html,
@@ -917,9 +923,11 @@
                 ${lastDeck.meta.references ? `<span class="badge neutral">${lastDeck.meta.references} reference case${lastDeck.meta.references > 1 ? "s" : ""}</span>` : ""}
                 ${lastDeck.meta.hasTimeline ? `<span class="badge neutral">rollout timeline</span>` : ""}
                 ${lastDeck.meta.pricingFirst ? `<span class="badge brand" data-tip="Their team spends most of its deck time on pricing — so this deck leads with it">pricing moved up front</span>` : ""}
+                ${(s.take || 1) > 1 ? `<span class="badge neutral">take ${s.take}</span>` : ""}
               </div>
               <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
                 <button class="btn primary sm" data-act="deck-preview">Preview deck</button>
+                <button class="btn ghost sm" data-act="deck-retake" data-tip="Recompose this deck — a different headline, framing and closing, same facts">↻ New take</button>
                 <button class="btn ghost sm" data-act="deck-dl">Download HTML</button>
                 <button class="btn ghost sm" data-act="share-deck">Share to hub</button>
                 ${ex ? `<a class="btn ghost sm" href="${ex}" target="_blank" rel="noopener">Hand-polished example ↗</a>` : ""}
@@ -1291,7 +1299,7 @@
     if (hn) { store.set("mimra.hn." + hn.dataset.hnClose, "off"); hn.closest(".help-note").remove(); return; }
 
     const pick = e.target.closest("[data-pick]");
-    if (pick) { studioState[pick.dataset.pick] = pick.dataset.val; render(); return; }
+    if (pick) { studioState[pick.dataset.pick] = pick.dataset.val; studioState.take = 1; render(); return; }
 
     const terr = e.target.closest("[data-terr]");
     if (terr) { flowFilter = terr.dataset.terr; render(); return; }
@@ -1345,6 +1353,12 @@
       if (a === "create-hub") { createHub(); return; }
       if (a === "new-hub") { newHubModal(); return; }
       if (a === "deck-preview") { openDeckOverlay(); return; }
+      if (a === "deck-retake") {
+        studioState.take = (studioState.take || 1) + 1;
+        runGeneration();
+        toast("Recomposing — take " + studioState.take + ".");
+        return;
+      }
       if (a === "deck-dl") {
         if (lastDeck && downloadFile(slug(lastDeck.title) + ".html", lastDeck.html, "text/html")) toast("Deck downloaded as HTML.");
         return;

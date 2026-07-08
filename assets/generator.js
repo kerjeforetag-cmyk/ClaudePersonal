@@ -31,6 +31,18 @@
   const numOf = (s) => { const m = String(s).replace(/,/g, "").match(/(\d+)/); return m ? +m[1] : null; };
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
+  // deterministic per-(customer, objective, take) randomness — same inputs
+  // always compose the same deck; a new take recomposes differently
+  function seededRng(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return function () {
+      h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+      return ((h >>> 0) % 10000) / 10000;
+    };
+  }
+  const pick = (rng, arr) => arr[Math.floor(rng() * arr.length) % arr.length];
+
   function deriveProfile(hub) {
     const about = hub.about || "";
     const text = ((hub.industry || "") + " " + about).toLowerCase();
@@ -79,56 +91,80 @@
     _default: { t: "SmartCharge", p: "10–30 kW opportunity charging at the points where work naturally pauses. VDE 0510-48 compliant — no classified battery room." }
   };
 
-  // situation drives the headline & the "where this starts" framing
+  // situation drives the headline & the "where this starts" framing.
+  // headline/sitTitle are POOLS — the seeded rng picks per customer+take,
+  // so two customers in the same category still open differently.
   const SITUATION = {
     conversion: {
       kicker: "From lead-acid to Li-ion",
-      headline: (p) => p.category === "marine" ? "Retire the diesel.\nKeep the water time." : "The last battery room\nyou'll ever run.",
-      sitTitle: "Where this starts.",
+      headlines: (p, h) => [
+        "The last battery room\nyou'll ever run.",
+        `${p.fleet ? p.fleet.raw + " " + p.fleet.unit + "s" : "Your fleet"}.\nZero swaps.`,
+        "Retire the lead.\nKeep the trucks.",
+        `Swap the chemistry,\nnot ${h.company.split(" ")[0]}'s rhythm.`
+      ],
+      sitTitles: ["Where this starts.", "What today costs.", "The lead-acid tax."],
       sitLede: (h, p) => `${h.company} runs ${fleetPhrase(p)}${p.sites ? ` across ${p.sites} sites` : ""} on lead-acid today — a dedicated battery room, mid-shift swaps, and a maintenance line that grows every year the fleet ages.`,
-      stats: (h, p) => [
-        p.fleet && p.fleet.unit !== "m²" ? { v: Math.round(p.fleet.n * 0.3), l: "battery swaps a day, eliminated" } : { v: "0", l: "battery swaps once converted" },
-        { v: "−36%", l: "energy cost, from higher round-trip efficiency" },
-        p.sites ? { v: p.sites, l: "sites on one telemetry platform" } : { v: "7 yr", l: "warranty · 10,000 cycles to 80%" }
-      ]
+      stats: (h, p) => {
+        const swaps = p.fleet && p.fleet.unit !== "m²" ? Math.round(p.fleet.n * 0.3) : null;
+        return [
+          swaps ? { v: swaps, l: "battery swaps a day, eliminated", n: `${p.fleet.raw} trucks × ~0.3 swaps per shift` } : { v: "0", l: "battery swaps once converted" },
+          swaps ? { v: Math.round(swaps * 8 * 300 / 60).toLocaleString("en-US") + " h", l: "swap labor returned per year", n: `${swaps} swaps × 8 min × 300 days` } : { v: "−36%", l: "energy cost, from round-trip efficiency" },
+          { v: "−36%", l: "energy cost", n: "Li-ion round-trip ~92% vs lead-acid ~72%" }
+        ].slice(0, 3);
+      }
     },
     refit: {
       kicker: "Hybrid to full-electric",
-      headline: () => "Off diesel.\nStill on the water.",
-      sitTitle: "Where this starts.",
-      sitLede: (h, p) => `${h.company} operates ${fleetPhrase(p)} on a hybrid-to-full-electric program. The packs that survive a warehouse won't survive a fjord — this is built for yours.`,
+      headlines: (p, h) => [
+        "Off diesel.\nStill on the water.",
+        "Retire the genset.\nKeep the sea time.",
+        `${p.fleet ? cap(p.fleet.raw) + " " + p.fleet.unit + "s" : "The fleet"}, fully electric.\nNo second thoughts.`
+      ],
+      sitTitles: ["Where this starts.", "Built for your water."],
+      sitLede: (h, p) => `${h.company} operates ${fleetPhrase(p)} on a hybrid-to-full-electric program. The packs that survive a warehouse won't survive ${(h.country === "Norway") ? "a fjord in February" : "open water"} — this is built for yours.`,
       stats: (h, p) => [
-        p.fleet ? { v: p.fleet.raw, l: cap(p.fleet.unit) + "s in the refit program" } : { v: "22", l: "vessels in the program" },
-        { v: "99.6%", l: "uptime at −15 °C, trailing 12 months" },
+        p.fleet ? { v: p.fleet.raw, l: cap(p.fleet.unit) + "s in the refit program", n: "from your hub" } : { v: "22", l: "vessels in the program" },
+        { v: "99.6%", l: "uptime at −15 °C, trailing 12 months", n: "FleetView telemetry, all marine customers" },
         { v: "IP67", l: "sealed & DNV-GL type-approved" }
       ]
     },
     greenfield: {
       kicker: "A blank sheet",
-      headline: () => "Zero lead,\nfrom day one.",
-      sitTitle: "The rare chance.",
+      headlines: (p, h) => [
+        "Zero lead,\nfrom day one.",
+        `${p.fleet && p.fleet.unit === "m²" ? p.fleet.raw + " m²" : "A new site"}.\nNo battery room.`,
+        "Design the building\naround the energy."
+      ],
+      sitTitles: ["The rare chance.", "Before the concrete."],
       sitLede: (h, p) => `${h.company}'s ${p.fleet && p.fleet.unit === "m²" ? p.fleet.raw + " m² " : "new "}facility is a blank sheet — the chance to design the building around Li-ion instead of retrofitting it in later. No battery room, no swap shift, no legacy to undo.`,
       stats: (h, p) => [
-        { v: "0 m²", l: "battery room in the floor plan" },
+        { v: "0 m²", l: "battery room in the floor plan", n: "≈ 400 m² for a lead-acid fleet this size" },
         { v: "None", l: "swap shifts, ever" },
-        { v: "Ready", l: "for the 2027 indoor-charging code" }
+        { v: "Ready", l: "for the 2027 indoor-charging code", n: "ventilation + certified telemetry" }
       ]
     },
     oem: {
       kicker: "OEM partnership",
-      headline: () => "One energy system.\nEvery platform you ship.",
-      sitTitle: "Where this starts.",
+      headlines: (p, h) => [
+        "One energy system.\nEvery platform you ship.",
+        `Inside ${h.company.split(" ")[0]}'s platform,\ninvisible to your customer.`,
+        "Your product.\nOur chemistry."
+      ],
+      sitTitles: ["Where this starts.", "The integration brief."],
       sitLede: (h) => `${h.company} integrates NordCell packs into its own platforms. That means the energy system has to disappear into your product — documented, certified, and consistent across every unit you ship.`,
       stats: () => [
         { v: "11,400+", l: "packs in daily operation, 14 countries" },
         { v: "99.6%", l: "fleet uptime, trailing 12 months" },
-        { v: "7 yr", l: "warranty · 10,000 cycles to 80%" }
+        { v: "CAN", l: "documented interface, embedded BMS" }
       ]
     },
     evaluating: {
       kicker: null,
-      headline: (p, h, o) => o.name === "Tender response" ? "Every requirement,\nanswered." : `A case ${h.company.split(" ")[0]}\ncan measure.`,
-      sitTitle: "Where this starts.",
+      headlines: (p, h, o) => o.name === "Tender response"
+        ? ["Every requirement,\nanswered."]
+        : [`A case ${h.company.split(" ")[0]}\ncan measure.`, "The numbers first.\nThe handshake after.", `${h.country ? h.country + " runs" : "Fleets run"} on uptime.\nSo does this offer.`],
+      sitTitles: ["Where this starts.", "The starting point."],
       sitLede: (h) => hub_about_or(h),
       stats: (h) => [
         hub_value_stat(h),
@@ -146,12 +182,14 @@
     const p = deriveProfile(hub);
     const sit = SITUATION[p.situation] || SITUATION.evaluating;
     const industry = (hub.industry || "your industry").toLowerCase();
+    const take = (opts && opts.take) || 1;
+    const rng = seededRng(hub.id + ":" + objKey + ":" + take);
 
     // headline: situation-led for proposal/intro; objective-led for renewal/tender
     let headline;
-    if (objKey === "renewal") headline = "Phase one worked.\nHere's phase two.";
+    if (objKey === "renewal") headline = pick(rng, ["Phase one worked.\nHere's phase two.", `The data is in.\nSo is ${hub.company.split(" ")[0]}'s next step.`, "Proven on your fleet.\nReady to scale."]);
     else if (objKey === "tender") headline = "Every requirement,\nanswered.";
-    else headline = sit.headline(p, hub, o);
+    else headline = pick(rng, sit.headlines(p, hub, o));
 
     // lede: objective intent, woven with the customer's world
     const world = WORLD[p.category] || WORLD.general;
@@ -199,22 +237,52 @@
       ];
     }
 
-    // closing, contact-aware
+    // every question they actually asked in the hub → answered up front
+    const qa = (hub.timeline || [])
+      .map((t) => { const m = t.what.match(/["“](.+?)["”]/); return m ? { q: m[1], who: (t.who || "").split(" ")[0] } : null; })
+      .filter(Boolean).slice(0, 3);
+
+    // documents already shared → evidence the deck can point at
+    const evidence = (objKey === "proposal" || objKey === "tender")
+      ? (hub.docs || []).slice(0, 4).map((d) => d.name)
+      : [];
+
+    // the technical gatekeeper on their side, if we know one
+    let personNote = null;
+    const gk = (opts && opts.people || []).find((x) => /engineer|technical|site|fleet manager/i.test(x.role || ""));
+    if (gk && (objKey === "proposal" || objKey === "tender")) {
+      personNote = { name: gk.name, text: `The ${p.category === "marine" ? "DNV-GL" : "VDE 0510-48"} compliance annex is pre-assembled in your hub for ${gk.name}'s review — nothing to chase before sign-off.` };
+    }
+
+    // closing, contact-aware, seeded variant
     const first = (hub.contact || "").split(" ")[0] || "your team";
-    const closingLede = `Reply in your Mimra hub — every question lands with ${p.category === "oem" ? "engineering and procurement together" : "the whole team"} — or book directly with ${first}'s calendar in mind.`;
+    const closingLede = pick(rng, [
+      `Reply in your Mimra hub — every question lands with ${p.category === "oem" ? "engineering and procurement together" : "the whole team"} — or book directly with ${first}'s calendar in mind.`,
+      `One reply in your Mimra hub reaches everyone on both sides. Or pick a slot that suits ${first} — the calendar link is live.`,
+      `Everything in this document already lives in your shared hub. When ${first} is ready, so are we.`
+    ]);
 
     return {
       objName: o.name, cta: o.cta, kicker: sit.kicker || o.name,
-      headline, lede, sitTitle: sit.sitTitle, sitLede: sit.sitLede(hub, p),
-      stats, middleTitle, middleCards, closingLede, profile: p
+      headline, lede, sitTitle: pick(rng, sit.sitTitles), sitLede: sit.sitLede(hub, p),
+      stats, middleTitle, middleCards, closingLede, qa, evidence, personNote, take, profile: p
     };
   }
 
-  function hubQuote(hub) {
-    const t = (hub.timeline || []).find((x) => /["“]/.test(x.what));
-    if (!t) return "";
-    const q = t.what.match(/["“](.+?)["”]/);
-    return q ? `<div class="hubnote"><b>From your hub:</b> “${esc(q[1])}” — answered in this document, and in your hub under Technical data.</div>` : "";
+  function qaBlock(c, max) {
+    if (!c.qa || !c.qa.length) return "";
+    return c.qa.slice(0, max || 2).map((x) =>
+      `<div class="hubnote"><b>${esc(x.who)} asked:</b> “${esc(x.q)}” — answered in this document, and in your hub under Technical data.</div>`
+    ).join("");
+  }
+  function evidenceBlock(c) {
+    if (!c.evidence || !c.evidence.length) return "";
+    return `<div class="ev-wrap"><span class="ev-label">Already in your shared hub</span>
+      <div class="ev-chips">${c.evidence.map((d) => `<span class="ev-chip">📄 ${esc(d)}</span>`).join("")}</div></div>`;
+  }
+  function personBlock(c) {
+    if (!c.personNote) return "";
+    return `<div class="hubnote"><b>For ${esc(c.personNote.name)}:</b> ${esc(c.personNote.text)}</div>`;
   }
 
   // rollout timeline anchored to the deal's expected close month
@@ -299,6 +367,11 @@
   <style>.printbtn{position:fixed;right:18px;bottom:18px;z-index:60;background:${acc};color:#fff;border:0;border-radius:999px;padding:11px 20px;font:600 13px system-ui;cursor:pointer;box-shadow:0 8px 24px -8px rgba(26,25,21,.4)}@media print{.printbtn{display:none}}</style>`;
 
   const SAVINGS_CSS = `
+.ev-wrap{margin-top:26px}
+.ev-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3,#898781);font-weight:700}
+.ev-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ev-chip{border:1px solid var(--line,#e3e1d8);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--ink2,#52514e);background:var(--card,#fcfcfb)}
+.stat-how{font-size:11px;color:var(--ink3,#898781);margin-top:6px;font-style:italic}
 .sv-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:28px;box-shadow:0 1px 2px rgba(26,25,21,.05),0 10px 30px -14px rgba(26,25,21,.15)}
 .sv-card h3{font-size:19px;margin-bottom:6px}
 .sv-sub{font-size:14px;color:var(--ink2,#52514e)}
@@ -373,8 +446,10 @@ ${SAVINGS_CSS}
 <h2>Summary</h2>
 <p>${esc(c.lede)}</p>
 <p style="margin-top:10px">${esc(c.sitLede)}</p>
-<div class="stats">${st.map((x) => `<div class="stat"><b>${esc(x.v)}</b><span>${esc(x.l)}</span></div>`).join("")}</div>
-${hubQuote(hub)}
+<div class="stats">${st.map((x) => `<div class="stat"><b>${esc(x.v)}</b><span>${esc(x.l)}</span>${x.n ? `<div class="stat-how">${esc(x.n)}</div>` : ""}</div>`).join("")}</div>
+${qaBlock(c, 3)}
+${personBlock(c)}
+${evidenceBlock(c)}
 <h2>${esc(c.middleTitle)}</h2>
 <div class="stats">${c.middleCards.map((m) => `<div class="stat"><b style="font-size:16px">${esc(m.t)}</b><span style="font-size:13px;color:var(--ink2)">${esc(m.p)}</span></div>`).join("")}</div>
 ${sv ? sv.html : ""}
@@ -408,9 +483,10 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
     <h2 class="rv">${esc(c.sitTitle)}</h2>
     <p class="lede rv d1">${esc(c.sitLede)}</p>
     <div class="grid cols-3">
-      ${st.map((x, i) => `<div class="card rv d${(i % 2) + 1}"><div class="stat-value">${esc(x.v)}</div><div class="stat-note">${esc(x.l)}</div></div>`).join("")}
+      ${st.map((x, i) => `<div class="card rv d${(i % 2) + 1}"><div class="stat-value">${esc(x.v)}</div><div class="stat-note">${esc(x.l)}</div>${x.n ? `<div class="stat-how">${esc(x.n)}</div>` : ""}</div>`).join("")}
     </div>
-    ${hubQuote(hub)}
+    ${qaBlock(c, 2)}
+    ${personBlock(c)}
   </div>
 </section>`;
 
@@ -420,8 +496,10 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
     <div class="kicker rv">Commercial</div>
     ${priceTable(hub).replace("<h2>", '<h2 class="rv">')}
     ${sv ? `<div class="rv d1">${sv.html}</div>` : ""}
+    <div class="rv d2">${evidenceBlock(c)}</div>
   </div>
 </section>` : "";
+    const evidenceFallback = !priceTable(hub) ? `<div class="rv d2">${evidenceBlock(c)}</div>` : "";
 
     const middleSection = `
 <section>
@@ -433,6 +511,7 @@ ${refs && refs.length ? `<h2>Fleets like yours</h2>${referencesBlock(refs)}` : "
     </div>
     ${tl ? `<div class="tl rv d2">${tl.map((s) => `
       <div class="tl-item"><span class="q">${esc(s.q)}</span><b>${esc(s.t)}</b><span>${esc(s.p)}</span></div>`).join("")}</div>` : ""}
+    ${evidenceFallback}
   </div>
 </section>`;
 
