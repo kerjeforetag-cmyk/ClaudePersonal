@@ -875,10 +875,28 @@
         i++; setTimeout(tick, stepT);
       } else {
         const objName = D.studio.objectives.find((o) => o.id === s.objective).name;
+        // reference cases: other hubs with proven outcomes
+        const references = D.hubs
+          .filter((x) => x.id !== hub.id && ((x.proposals || []).some((p) => p.status === "Accepted") || x.stage === "Verbal commit"))
+          .slice(0, 3)
+          .map((x) => ({ company: x.company, flag: x.flag, line: ((x.about || "").split(". ")[0] || "A reference fleet.").replace(/\.?$/, ".") }));
+        // engagement tell: if their team dwells on pricing, lead with it
+        let emphasis = null;
+        const statDeck = (hub.presentations || []).find((p) => p.slideStats && p.views > 3);
+        if (statDeck) {
+          const total = statDeck.slideStats.reduce((a, x) => a + x[1], 0);
+          const top = statDeck.slideStats.reduce((a, b) => (b[1] > a[1] ? b : a));
+          if (/pric|number|commercial/i.test(top[0]) && top[1] / total >= 0.2) emphasis = "pricing";
+        }
+        const built = window.MimraGen.buildDeck(hub, s.objective, s.tier, {
+          accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#c96442",
+          sender: { name: D.tenant.user.name, email: D.tenant.user.email },
+          workspace: store.get("mimra.wsname") || D.tenant.name,
+          references, emphasis
+        });
         lastDeck = {
-          html: window.MimraGen.buildDeck(hub, s.objective, s.tier, {
-            accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#c96442"
-          }),
+          html: built.html,
+          meta: built.meta,
           title: hub.company + " — " + objName + " · " + tier.name
         };
         const EXAMPLES = {
@@ -892,6 +910,12 @@
             <div style="flex:1">
               <b style="font-size:15px">${esc(hub.company)} — ${esc(objName)}</b>
               <span class="src" style="display:block">Generated just now from hub data · ${esc(tier.price)} · standalone HTML</span>
+              <div class="hub-meta" style="margin-top:8px">
+                ${lastDeck.meta.savingsAvg ? `<span class="badge good">−${lastDeck.meta.savingsAvg}% avg advantage charted</span>` : ""}
+                ${lastDeck.meta.references ? `<span class="badge neutral">${lastDeck.meta.references} reference case${lastDeck.meta.references > 1 ? "s" : ""}</span>` : ""}
+                ${lastDeck.meta.hasTimeline ? `<span class="badge neutral">rollout timeline</span>` : ""}
+                ${lastDeck.meta.pricingFirst ? `<span class="badge brand" data-tip="Their team spends most of its deck time on pricing — so this deck leads with it">pricing moved up front</span>` : ""}
+              </div>
               <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
                 <button class="btn primary sm" data-act="deck-preview">Preview deck</button>
                 <button class="btn ghost sm" data-act="deck-dl">Download HTML</button>
