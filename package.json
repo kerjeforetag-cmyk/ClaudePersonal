@@ -1,0 +1,14 @@
+{
+  "name": "kasper-kerje-resan-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Verification harness for the Kasper Kerje presentation hub (Fogmaker).",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:10x": "node scripts/run-10x.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
