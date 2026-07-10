@@ -135,11 +135,30 @@ test('5. no horizontal overflow on tablet (768)', async ({ page }) => {
   expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
 });
 
-test('6. no horizontal overflow on mobile (390 and 414)', async ({ page }) => {
+test('6. no horizontal overflow on mobile (390 and 414); map fits without swipe', async ({ page }) => {
   const bad390 = await overflowAt(page, 390, 844);
   expect(bad390, '390px: ' + JSON.stringify(bad390, null, 2)).toEqual([]);
   const bad414 = await overflowAt(page, 414, 896);
   expect(bad414, '414px: ' + JSON.stringify(bad414, null, 2)).toEqual([]);
+  // The expansion map must be fully visible on the smallest phone — no horizontal
+  // swipe needed to see the whole animation (explicit requirement).
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(FILE_URL, { waitUntil: 'load' });
+  await settleLayout(page);
+  const map = await page.evaluate(() => {
+    const svg = document.getElementById('expmap');
+    const scroll = svg.closest('.mapscroll');
+    const r = svg.getBoundingClientRect();
+    return {
+      left: Math.round(r.left),
+      right: Math.round(r.right),
+      vw: document.documentElement.clientWidth,
+      swipe: scroll ? scroll.scrollWidth - scroll.clientWidth : 0,
+    };
+  });
+  expect(map.swipe, 'map still requires a horizontal swipe').toBeLessThanOrEqual(2);
+  expect(map.right, 'map extends past the right edge').toBeLessThanOrEqual(map.vw + 2);
+  expect(map.left, 'map extends past the left edge').toBeGreaterThanOrEqual(-2);
 });
 
 // --- 7. Reveal engine: deep content hidden at load, reveals on scroll --------
