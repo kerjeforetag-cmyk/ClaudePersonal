@@ -119,6 +119,8 @@ a.card:hover{transform:translateY(-4px);border-color:var(--fire)}
 .card .conf{display:inline-block;margin-top:10px;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#0f1113;background:var(--fire);padding:3px 8px;font-weight:700}
 .contact div{font-size:.95rem;color:#e6e8eb;margin-bottom:4px}
 .contact b{color:#fff}
+.contact .role{color:#8b9098;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.cdiv{height:1px;background:#2c313a;margin:16px 0}
 .footnote{margin-top:38px;font-size:.8rem;color:#8b9098;max-width:72ch}
 /* insight & method */
 .insikt{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:24px 0}
@@ -230,8 +232,10 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
 .insikt .i{position:relative;overflow:hidden}
 .insikt .i::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 14px 14px 0;border-color:transparent var(--fire) transparent transparent}
 
-.wins{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:22px 0 6px}
-.win{background:var(--mist);border-top:3px solid var(--fire);padding:14px 16px}
+.wins{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:22px 0 6px}
+.win{background:var(--mist);border-top:3px solid var(--fire);padding:14px 16px;flex:1 1 240px}
+@media(min-width:641px){.win{max-width:calc(50% - 8px)}}
+@media(min-width:900px){.win{max-width:calc(33.333% - 11px)}}
 .win .wv{font-family:'Barlow Condensed';font-weight:700;font-size:1.3rem;line-height:1.05;font-variant-numeric:tabular-nums}
 .win p{font-size:.86rem;color:#4a5058;margin:6px 0 0;max-width:none;line-height:1.45}
 .mchip{background:#fff;border:1px solid var(--line);border-top:3px solid var(--fire);color:var(--ink)}
@@ -527,7 +531,7 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
       </svg>
     </div>
     <p class="rv">När en internrekrytering öppnades fick de privata projekten följa med in i intervjurummet. Det räckte. Uppdraget blev att bygga upp företagets Support Center <b>från grunden</b>, navet mellan kund, mjukvara och konstruktion, med ansvar för all kundvänd teknisk dokumentation. Kodandet kom på köpet, inlärt längs vägen.</p>
-    <p class="rv d1">Ungefär samtidigt lanserade företaget sitt fleet management-system, och ansvaret för att <b>administrera det</b> landade här. Därifrån växte rollen av sig själv: kollegorna på service behövde stöd kring <b>mjukvaran, tillbehören och systemet</b>, så det stödet byggdes. Lärdomen sitter kvar: det mesta går att lära sig, bara man vågar ta i det. Med åren växte en djup kunskap om litiumkemier, laddning och batterisystem fram.</p>
+    <p class="rv d1">Ungefär samtidigt lanserade företaget sitt fleet management-system, och ansvaret för att <b>administrera det</b> landade här. Därifrån växte rollen av sig själv: kollegorna på service behövde stöd kring <b>mjukvaran, tillbehören och systemet</b>, så det stödet byggdes. Lärdomen sitter kvar: det mesta går att lära sig, bara man vågar ta i det. Med åren växte kunskapen om litiumkemier, laddning och batterisystem fram.</p>
     <div class="pull rv d2">Service handlar om kundens vardag. <i>En säljare kan vinna en kund, men det är servicen som gör att kunden stannar.</i></div>
   </div>
 </section>
@@ -643,7 +647,7 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
         <p><b>Fritt mandat.</b> Ansvarsområdet ger frihet att bygga affären och välja strategi utifrån varje marknads förutsättningar. Utöver territoriet ingår ett strategiskt team för AGV och AMR, med uppdraget att öka marknadsandelen inom autonoma och förarlösa truckar.</p>
       </div>
     </div>
-    <p class="rv" style="margin-top:20px">Erbjudanden om chefsroller har kommit tidigare, men inte i rätt bransch eller rätt läge. Trivseln på Micropower är god, och internt förs en dialog om utökat ansvar. Att ändå söka den här rollen är ett medvetet val. Uppdraget känns meningsfullt, och det kommer att få samma engagemang som Micropower har fått genom åren.</p>
+    <p class="rv" style="margin-top:20px">Chefsroller har dykt upp tidigare, men inte i rätt bransch eller rätt läge. Trivseln på Micropower är god, och internt förs en dialog om utökat ansvar. Att ändå söka den här rollen är ett medvetet val. Uppdraget känns meningsfullt, och det kommer att få samma engagemang som Micropower har fått genom åren.</p>
   </div>
 </section>
 
@@ -785,14 +789,14 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
         <p>Hubben är en försmak av arbetssättet. Tänk samma princip för ett helt säljled: en ansluten plats där säljaren själv tar fram material som passar just den kunden, alltid korrekt, alltid i linje med varumärket. Tid sparas, och fler affärer går i mål.</p>
       </div>
       <div class="card rv d3">
-        <div class="kandhead"><div class="pface cardface" role="img" aria-label="Porträtt av Kasper Kerje"></div><div class="ct" style="margin-bottom:0">Kandidat</div></div>
+        <div class="kandhead"><div class="pface cardface" role="img" aria-label="Porträtt av Kasper Kerje"></div><div class="ct" style="margin-bottom:0">Kontakt</div></div>
         <div class="contact">
+          <div class="role">Kandidat</div>
           <div><b>Kasper Kerje</b></div><div>Växjö · Micropower</div><div>+46 726 44 79 65</div><div>kasper.kerje@live.se</div>
         </div>
-      </div>
-      <div class="card rv d4">
-        <div class="ct">Rekryterare</div>
+        <div class="cdiv"></div>
         <div class="contact">
+          <div class="role">Rekryterare</div>
           <div><b>Cecilia Ahlqvist</b> · Re-Source AB</div><div>0733-41 56 37</div><div>cecilia.ahlqvist@re-source.se</div>
         </div>
       </div>
