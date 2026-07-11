@@ -125,7 +125,8 @@ a.card:hover{transform:translateY(-4px);border-color:var(--fire)}
 /* insight & method */
 .insikt{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:24px 0}
 .insikt.market{grid-template-columns:repeat(2,1fr)}
-@media(max-width:640px){.insikt.market{grid-template-columns:1fr}}
+.insikt.roles{grid-template-columns:repeat(2,1fr)}
+@media(max-width:640px){.insikt.market{grid-template-columns:1fr}.insikt.roles{grid-template-columns:1fr}}
 .insikt .i{background:#fff;border-left:4px solid var(--fire);padding:14px 16px;font-size:.94rem;line-height:1.5;box-shadow:0 2px 12px rgba(0,0,0,.04)}
 .insikt .i b{display:block;font-family:'Barlow Condensed';font-weight:700;font-size:1.05rem;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
 h3.sub{font-size:1.35rem;margin:34px 0 10px;color:var(--ink)}
@@ -531,7 +532,7 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
       </svg>
     </div>
     <p class="rv">När en internrekrytering öppnades fick de privata projekten följa med in i intervjurummet. Det räckte. Uppdraget blev att bygga upp företagets Support Center <b>från grunden</b>, navet mellan kund, mjukvara och konstruktion, med ansvar för all kundvänd teknisk dokumentation. Kodandet kom på köpet, inlärt längs vägen.</p>
-    <p class="rv d1">Ungefär samtidigt lanserade företaget sitt fleet management-system, och ansvaret för att <b>administrera det</b> landade här. Därifrån växte rollen av sig själv: kollegorna på service behövde stöd kring <b>mjukvaran, tillbehören och systemet</b>, så det stödet byggdes. Lärdomen sitter kvar: det mesta går att lära sig, bara man vågar ta i det. Med åren växte kunskapen om litiumkemier, laddning och batterisystem fram.</p>
+    <p class="rv d1">Ungefär samtidigt lanserade företaget sitt fleet management-system, och ansvaret för att <b>administrera det</b> landade här. Därifrån växte rollen av sig själv: kollegorna på service behövde stöd kring <b>mjukvaran, tillbehören och systemet</b>, så det stödet byggdes. Fleet management-systemet gav också data, och att läsa <b>batteri- och laddningsmönster</b> blev ett verktyg i dialogen med några av världens största batteritillverkare. Lärdomen sitter kvar: det mesta går att lära sig, bara man vågar ta i det. Med åren växte kunskapen om litiumkemier, laddning och batterisystem fram.</p>
     <div class="pull rv d2">Service handlar om kundens vardag. <i>En säljare kan vinna en kund, men det är servicen som gör att kunden stannar.</i></div>
   </div>
 </section>
@@ -657,7 +658,7 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
     <div class="years rv">Varför just det här uppdraget</div>
 
     <h3 class="sub rv">Så kan produkten möta kunden</h3>
-    <p class="rv">En stor del av jobbet är att göra teknik enkel att förstå. Här är skillnaden mellan två släckmetoder i en bild, tydlig för både säljled och slutkund. Den som ser vad som löses fattar lättare beslut. Prova:</p>
+    <p class="rv">En stor del av jobbet är att göra teknik enkel att förstå. Här är skillnaden mellan två släckmetoder i en bild, tydlig för både säljled och slutkund. Den som ser vad som löses fattar lättare beslut.</p>
     <div class="demo rv d1">
       <div class="demopills">
         <div class="dp" id="dpL"><span class="dpdot"></span><b id="dpLt">Brand</b></div>
@@ -706,7 +707,7 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
     <p class="rv" style="font-size:.92rem;color:var(--smoke)">Ett utkast, inget facit, dag ett handlar om att lyssna.</p>
 
         <h3 class="sub rv">Ärligt om ledarskapet</h3>
-    <p class="rv">Ledarskapet har funnits i praktiken, även utan formellt personalansvar: att stötta kollegor när något kört fast, och att driva egna initiativ hela vägen till beslut. Stegen nedan visar vägen dit:</p>
+    <p class="rv">Vägen hit har gått nerifrån. Sedan studenten 2011 har jag arbetat oavbrutet, först med datorreparationer och montering, och både IV Produkt och Micropower har återanställt mig. Ledarskapet har funnits i praktiken hela vägen, även utan formellt personalansvar: att stötta kollegor när något kört fast, och att driva egna initiativ ända till beslut. Stegen visar vägen:</p>
     <div class="ladder rv d1">
       <svg viewBox="0 0 820 240" width="820" aria-label="Karriärstege från golvet till Försäljningschef Norden">
         <g font-family="Barlow Condensed" font-weight="700" font-size="13" letter-spacing=".3">
@@ -722,6 +723,14 @@ h3.sub::before{content:"";width:14px;height:14px;background:var(--fire)}
       </svg>
       <p class="laddercap">Varje steg kom av att jobbet gjordes. Nästa steg är naturligt, inte ett hopp.</p>
     </div>
+    <p class="rv">Kort om vad varje steg har gett, och varför det pekar mot det här uppdraget:</p>
+    <div class="insikt roles rv d1">
+      <div class="i"><b>Golvet</b>Tempo och uthållighet, och respekt för hur produkten faktiskt byggs. Det ger trovärdighet hos både verkstaden och kundens tekniker.</div>
+      <div class="i"><b>Service</b>Byggde Support Center från grunden och lärde mig läsa batteri- och laddningsdata. Systemtänk som gör kunddialogen teknisk på riktigt.</div>
+      <div class="i"><b>Säljadmin</b>Höll ihop nyckelkundernas order och såg försäljningschefens vardag inifrån. Vet vad som avlastar och strukturerar ett säljteam.</div>
+      <div class="i"><b>Sales Manager</b>Byggde marknader och partner- och OEM-affär, och vann på värde snarare än pris. Det är kärnan i uppdraget nu.</div>
+    </div>
+    <p class="rv">Ett svar ska gå snabbt och ändå lösa mer än frågan som ställdes. Alldeles för ofta skickas ett mejl bara för att bli av med ärendet, och då kommer det tillbaka. Målet är motsatsen: svara kvickt, men så att kunden hittar lösningen på flera frågor i samma svar, och så att den som ska utföra det kan göra det enkelt. Det kräver att någon bygger systemet bakom svaret, och det är den delen jag trivs med.</p>
     <p class="rv">De flesta vet hur det känns med en chef som inte förmår motivera. En bra chef gör tvärtom: skapar förutsättningar och en arbetsmiljö som fungerar. En idé som håller får prövas i lämplig skala. En idé som inte håller får en tydlig förklaring, så att fokus kan flyttas vidare.</p>
 
     <h3 class="sub rv">Styrkor, och det som ska växa</h3>
