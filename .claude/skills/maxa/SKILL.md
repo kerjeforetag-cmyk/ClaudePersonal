@@ -45,6 +45,7 @@ them back to confirm layout on desktop and mobile.
 
 ## 6. Deliver
 Commit + push to the working branch. Republish the Artifact to the **same
-URL** in `CLAUDE.md`. `SendUserFile` the HTML. Re-prime
+URL** in `CLAUDE.md`. `SendUserFile` the HTML. **Always paste the clickable
+Artifact link in the reply** (not only the file). Re-prime
 `.claude/.last-delivered-html` with the new sha1. Summarise what changed
 and why it raises the odds.

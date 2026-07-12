@@ -50,8 +50,10 @@ we hold 100 %). `npx playwright test` runs the suite once.
 
 ## Delivery (always)
 
-After a change lands: **SendUserFile** the HTML, and **republish the
+After a change lands: **SendUserFile** the HTML, **republish the
 Artifact to the same URL**
 (`https://claude.ai/code/artifact/e5b95266-bb37-4e79-bdbf-c5b4bf67b800`),
-then prime `.claude/.last-delivered-html` with the new sha1. The Stop hook
+and **always paste that clickable Artifact link in the final reply** so the
+user can open the live page, not only receive the file. Then prime
+`.claude/.last-delivered-html` with the new sha1. The Stop hook
 (`.claude/hooks/remind-deliver-html.sh`) nudges this if forgotten.
